@@ -4,9 +4,6 @@ if (!isset($_SESSION)) {
 }
 require_once __DIR__ . '/local-request.php';
 require_once __DIR__ . '/dual-role.php';
-if (function_exists('dual_ensure_emp_backup_from_helu')) {
-    dual_ensure_emp_backup_from_helu();
-}
 dual_restore_emp_session_for_staff_boot();
 if (empty($_SESSION['staff_csrf'])) {
     $_SESSION['staff_csrf'] = bin2hex(function_exists('random_bytes') ? random_bytes(16) : openssl_random_pseudo_bytes(16));
@@ -137,7 +134,7 @@ if ($staffPreview) {
     $photoUrl = staff_photo_url($row_get_user);
     $old = 'https://system.helalia-ls.org/app/old/' . $staffLang . '/';
     $css = '../assets/css/helalia.css';
-    $extraCss = '../assets/css/staff.css?v=69';
+    $extraCss = '../assets/css/staff.css?v=70';
     $js = '../assets/js/staff.js?v=17';
     $icon = '../assets/img/logo-icon.png';
     $logo = '../assets/img/logo.png';
@@ -393,7 +390,7 @@ if ($staffPreview) {
 
     $old = 'https://system.helalia-ls.org/app/old/' . $staffLang . '/';
     $css = '../assets/css/helalia.css';
-    $extraCss = '../assets/css/staff.css?v=69';
+    $extraCss = '../assets/css/staff.css?v=70';
     $js = '../assets/js/staff.js?v=17';
     $icon = '../assets/img/logo-icon.png';
     $logo = '../assets/img/logo.png';
@@ -471,6 +468,12 @@ if ($staffLang === 'arb') {
         'events' => 'الفعاليات',
         'nav_home' => 'الرئيسية',
         'nav_language' => 'اللغة',
+        'nav_news' => 'آخر الأخبار',
+        'news_empty' => 'لا توجد أخبار مدرسية حالياً.',
+        'news_load_more' => 'عرض المزيد',
+        'news_close' => 'إغلاق',
+        'news_tap_more' => 'اضغط لقراءة المزيد',
+        'news_photo' => 'صورة',
         'lang_pick' => 'اختر اللغة',
         'lang_pick_hint' => 'كيف تريد عرض التطبيق',
         'lang_en' => 'English',
@@ -708,6 +711,12 @@ if ($staffLang === 'arb') {
         'events' => 'Events',
         'nav_home' => 'Home',
         'nav_language' => 'Language',
+        'nav_news' => 'Latest News',
+        'news_empty' => 'No school news right now.',
+        'news_load_more' => 'Load more',
+        'news_close' => 'Close',
+        'news_tap_more' => 'Tap to read more',
+        'news_photo' => 'Photo',
         'lang_pick' => 'Choose language',
         'lang_pick_hint' => 'How the app is shown',
         'lang_en' => 'English',
@@ -1099,6 +1108,18 @@ function staff_head($title, $dir, $css, $icon)
     echo '</head><body' . $dualAttr . '><div class="' . $appClass . '">';
 }
 
+function staff_header_actions()
+{
+    global $L;
+    if (!function_exists('staff_news_href')) {
+        require_once __DIR__ . '/staff-timeline.php';
+    }
+    echo '<div class="hero__actions">';
+    echo '<a class="menu-btn menu-btn--news" href="' . staff_h(staff_news_href()) . '" aria-label="' . staff_h($L['nav_news']) . '">' . staff_ico('bell') . '</a>';
+    echo '<button class="menu-btn menu-btn--lang" type="button" data-lang-open aria-expanded="false" aria-controls="lang-sheet" aria-label="' . staff_h($L['nav_language']) . '">' . staff_ico('globe') . '</button>';
+    echo '</div>';
+}
+
 function staff_inner($title, $backHref = 'emp-view.php', $navActive = 'home')
 {
     global $L, $css, $icon, $staffLang;
@@ -1112,7 +1133,7 @@ function staff_inner($title, $backHref = 'emp-view.php', $navActive = 'home')
     echo '<div class="hero__row">';
     echo '<a class="back" href="' . staff_h($backHref) . '" aria-label="' . staff_h($L['back']) . '">' . staff_ico('chevron') . '</a>';
     echo '<h1 class="hero__title">' . staff_h($title) . '</h1>';
-    echo '<button class="menu-btn menu-btn--lang" type="button" data-lang-open aria-expanded="false" aria-controls="lang-sheet" aria-label="' . staff_h($L['nav_language']) . '">' . staff_ico('globe') . '</button>';
+    staff_header_actions();
     echo '</div></header>';
     echo '<main class="page page--staff page--fab">';
 }
@@ -1181,7 +1202,7 @@ function staff_hero($title, $showEyebrow = false, $meta = '', $showTags = false)
     }
     echo '<h1 class="hero__title">' . staff_h($title) . '</h1>';
     echo '</div>';
-    echo '<button class="menu-btn menu-btn--lang" type="button" data-lang-open aria-expanded="false" aria-controls="lang-sheet" aria-label="' . staff_h($L['nav_language']) . '">' . staff_ico('globe') . '</button>';
+    staff_header_actions();
     echo '</div>';
     $profileHref = staff_profile_href();
     echo '<a class="featured featured--link" href="' . staff_h($profileHref) . '" aria-label="' . staff_h($L['profile']) . '">';

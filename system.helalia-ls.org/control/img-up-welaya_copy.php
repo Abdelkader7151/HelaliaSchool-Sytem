@@ -4,20 +4,31 @@
         // Compress image
         function compressImage($source, $destination, $quality) {
 
-            $info = getimagesize($source);
+            $info = @getimagesize($source);
+            if (!$info || empty($info['mime'])) {
+                return false;
+            }
 
-            if ($info['mime'] == 'image/jpeg') 
-                $image = imagecreatefromjpeg($source);
+            $image = false;
+            if ($info['mime'] == 'image/jpeg')
+                $image = @imagecreatefromjpeg($source);
 
-            elseif ($info['mime'] == 'image/gif') 
-                $image = imagecreatefromgif($source);
+            elseif ($info['mime'] == 'image/gif')
+                $image = @imagecreatefromgif($source);
 
-            elseif ($info['mime'] == 'image/png') 
-                $image = imagecreatefrompng($source);
+            elseif ($info['mime'] == 'image/png')
+                $image = @imagecreatefrompng($source);
 
-            imagejpeg($image, $destination, $quality);
+            if (!$image) {
+                return false;
+            }
+
+            $ok = @imagejpeg($image, $destination, $quality);
+            imagedestroy($image);
+            return (bool) $ok;
 
         }
+
  
         function getExtension($str) {
 $i = strrpos($str,".");
@@ -54,10 +65,12 @@ $errors=1;
 $image_name = time().'.'.$extension; 
 $newname = "../uploads/".$image_name; 
 	
-	compressImage($_FILES['ed_welaya_copy']['tmp_name'],$newname,60);
-
 if ($errors!=1){
-$copied = copy($_FILES['ed_welaya_copy']['tmp_name'], $newname);
+	@compressImage($_FILES['ed_welaya_copy']['tmp_name'],$newname,60);
+	$copied = is_file($newname) && @filesize($newname) > 0;
+	if (!$copied) {
+		$copied = copy($_FILES['ed_welaya_copy']['tmp_name'], $newname);
+	}
 if (!$copied) 
 {
 $msg .="<p class='alert alert-danger text-left ' style='padding:4px'>Copy unsuccessfull! Try again!</p>";

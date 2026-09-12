@@ -1111,11 +1111,14 @@ function staff_head($title, $dir, $css, $icon)
 function staff_header_actions()
 {
     global $L;
-    if (!function_exists('staff_news_href')) {
-        require_once __DIR__ . '/staff-timeline.php';
-    }
+    $onNews = (basename((string) ($_SERVER['SCRIPT_NAME'] ?? '')) === 'staff-news.php');
     echo '<div class="hero__actions">';
-    echo '<a class="menu-btn menu-btn--news" href="' . staff_h(staff_news_href()) . '" aria-label="' . staff_h($L['nav_news']) . '">' . staff_ico('bell') . '</a>';
+    if (!$onNews) {
+        if (!function_exists('staff_news_href')) {
+            require_once __DIR__ . '/staff-timeline.php';
+        }
+        echo '<a class="menu-btn menu-btn--news" href="' . staff_h(staff_news_href()) . '" aria-label="' . staff_h($L['nav_news']) . '">' . staff_ico('bell') . '</a>';
+    }
     echo '<button class="menu-btn menu-btn--lang" type="button" data-lang-open aria-expanded="false" aria-controls="lang-sheet" aria-label="' . staff_h($L['nav_language']) . '">' . staff_ico('globe') . '</button>';
     echo '</div>';
 }

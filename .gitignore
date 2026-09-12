@@ -26,6 +26,9 @@ system.helalia-ls.org/gallery/
 **/img/
 **/images/
 **/photos/
+# Keep Ascendra credit logo in git (emp Profile footer); other img/ stays ignored
+!system.helalia-ls.org/app/mobile/emp/assets/img/
+!system.helalia-ls.org/app/mobile/emp/assets/img/ascendra-logo-black.png
 
 # Included intentionally:
 # - system.helalia-ls.org/attachments/
@@ -34,6 +37,7 @@ system.helalia-ls.org/gallery/
 # - system.helalia-ls.org/app/mobile/media/ (incl. gallery)
 # - public_html/assets/media/ (incl. hero video + gallery)
 # - system.helalia-ls.org/homework/test.mp4
+# - emp Ascendra logo (exception above)
 
 # Vendor / bloat (not core app logic)
 **/vendors/

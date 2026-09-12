@@ -104,7 +104,6 @@ if (isset($_COOKIE['helu']) && isset($_COOKIE['help'])) {
     </nav>
     <p class="splash__copy" style="text-align:center">© <?php echo date('Y'); ?> <span>Helalia</span>
     <br>
-    <p style=';color:red;clear:both; padding-bottom:10px; font-size:10px' > <?php if($phone_id!=NULL){echo  $phone_id;}else{echo "Error Restart the Application" ;}?> </p>
     <br>
      <img src='parent\assets\img\ascendra-logo-white.png' width='100px' />
      </p>

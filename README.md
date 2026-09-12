@@ -13,11 +13,14 @@ public_html/             # Public website (helalia-ls.org)
 
 - Application PHP/JS/CSS/HTML and redirects
 - Live `Connections/database.php` and related config (private collaborators only)
-- Small brand assets (e.g. `logo.png`)
+- Brand assets (e.g. `logo.png`)
+- Control libraries: `control/PHPExcel/`, `control/font-awesome-4.7.0/`
+- Site/app media: `public_html/assets/media/`, `app/mobile/media/`
+- `attachments/` and `homework/test.mp4`
 
 ## What is excluded (server storage only)
 
-Student photos, uploads, gallery videos, homework file storage, vendor trees (`PHPExcel`, `bower`, etc.). Those remain on cPanel and are listed in `.gitignore`.
+Student photos (`kids/`), gallery videos (`gallery/`), runtime `uploads/`, and large vendor/source trees. Those remain on cPanel and are listed in `.gitignore`.
 
 ## Deploy (manual)
 

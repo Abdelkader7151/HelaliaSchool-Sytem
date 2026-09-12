@@ -17,38 +17,45 @@ tmp/
 temp/
 cache/
 
-# Runtime / uploads / PII photo storage (stay on server only)
+# Runtime / PII photo storage (stay on server only)
 **/kids/
 **/kid/
-**/gallery/
+system.helalia-ls.org/gallery/
 **/uploads/
-**/attachments/
-**/media/
 **/gps-pending/
 **/img/
 **/images/
 **/photos/
+
+# Included intentionally:
+# - system.helalia-ls.org/attachments/
+# - system.helalia-ls.org/control/PHPExcel/
+# - system.helalia-ls.org/control/font-awesome-4.7.0/
+# - system.helalia-ls.org/app/mobile/media/ (incl. gallery)
+# - public_html/assets/media/ (incl. hero video + gallery)
+# - system.helalia-ls.org/homework/test.mp4
 
 # Vendor / bloat (not core app logic)
 **/vendors/
 **/bower_components/
 **/node_modules/
 **/vendor/
-**/PHPExcel/
 **/PHPExcel_old/
 **/tcpdf/
-**/font-awesome-4.7.0/
 **/source/
 **/__MACOSX/
 cgi-bin/
 
-# Archives / large binaries
+# Archives / large binaries (allow tracked site/app media videos)
 *.zip
 *.rar
 *.7z
 *.tar
 *.gz
 *.mp4
+!system.helalia-ls.org/homework/test.mp4
+!public_html/assets/media/**/*.mp4
+!system.helalia-ls.org/app/mobile/media/**/*.mp4
 *.mov
 *.avi
 *.iso

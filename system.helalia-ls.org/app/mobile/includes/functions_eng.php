@@ -460,19 +460,29 @@ function optimizeImage($source, $destination, $extension, $maxWidth = 1600, $max
 
 
 
-/** Unread alerts older than this many days are not "new" for the bell badge. */
+/** Kept for older call sites; bell no longer uses a rolling day window. */
 function helalia_alert_new_days()
 {
-  return 14;
+  return 0;
+}
+
+/**
+ * Soft reset for the parent bell inbox (list + badge).
+ * Anything older than this timestamp is hidden. New school pushes still appear.
+ * 2026-09-13 01:50:00 Africa/Cairo (UTC+3).
+ */
+function helalia_alert_inbox_reset_at()
+{
+  return 1789253400;
 }
 
 function helalia_alert_new_since()
 {
-  return time() - (helalia_alert_new_days() * 86400);
+  return (int) helalia_alert_inbox_reset_at();
 }
 
 /**
- * Bell badge: count only recent unread (last N days). Old unread backlog is ignored.
+ * Bell badge: count only unread at/after the inbox reset. Old backlog is ignored.
  */
 function alert($parent_id, $kid_id)
 {

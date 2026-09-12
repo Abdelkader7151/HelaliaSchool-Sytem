@@ -163,7 +163,7 @@ if (count($tabRows) > 1) { ?>
     </div>
 <?php } ?>
 
-    <p class="auth__fine" style="margin:0 0 10px">عرض آخر <?php echo (int) helalia_alert_new_days(); ?> يوماً<?php if ($unreadNew > 0) { echo ' · ' . $unreadNew . ' جديدة'; } ?>.</p>
+    <p class="auth__fine" style="margin:0 0 10px"><?php if ($unreadNew > 0) { echo $unreadNew . ' جديدة'; } else { echo 'لا توجد تنبيهات جديدة'; } ?>.</p>
 <?php if ($unreadNew > 0) {
     $markUrl = 'parent-alerts.php?mark_all=1' . ($kid_id > 0 ? '&kid=' . $kid_id : '');
 ?>
@@ -172,7 +172,7 @@ if (count($tabRows) > 1) { ?>
 
     <div class="rows" id="alerts-list">
 <?php if (!$rows) { ?>
-      <p class="auth__fine">لا توجد تنبيهات جديدة في هذه الفترة.</p>
+      <p class="auth__fine">لا توجد تنبيهات جديدة.</p>
 <?php } else {
     foreach ($rows as $n) {
         $isUnread = ((int) $n['view'] === 0);

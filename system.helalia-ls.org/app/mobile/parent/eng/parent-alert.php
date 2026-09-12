@@ -48,48 +48,28 @@
 
            mysqli_query($database , $updateSQL1) or die(mysqli_error($database));   
 
-
-      /* -----------------------------------------------------------
-         Add class="external" to any <a> links inside the notification
-         text, so they can be styled/handled differently (e.g. open
-         in a new tab, show an outbound-link icon, etc.)
-      ----------------------------------------------------------- */
-      function add_external_link_class($html) {
-
-          if (!$html || strpos($html, '<a') === false) {
-              return $html;
+      // Safe HTML body: allow basic tags only; open links in new tab. No DOMDocument (glitchy on Arabic).
+      $rawText = (string) $row_get_notifications['text'];
+      $title = trim((string) $row_get_notifications['title']);
+      if ($title !== '' && strpos($rawText, $title) === 0) {
+          $rawText = ltrim(substr($rawText, strlen($title)), " \t\n\r\0\x0B,<");
+          if (strpos($rawText, 'br>') === 0 || strpos($rawText, 'br/>') === 0 || strpos($rawText, 'br />') === 0) {
+              $rawText = preg_replace('/^br\s*\/?\s*>\s*,?/i', '', $rawText);
           }
-
-          $dom = new DOMDocument();
-          libxml_use_internal_errors(true);
-          $dom->loadHTML(
-              '<?xml encoding="utf-8" ?><div>' . $html . '</div>',
-              LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
-          );
-          libxml_clear_errors();
-
-          foreach ($dom->getElementsByTagName('a') as $a) {
-              if (!$a->hasAttribute('href')) {
-                  continue;
-              }
-              $existing_classes = trim($a->getAttribute('class'));
-              $classes = $existing_classes !== '' ? preg_split('/\s+/', $existing_classes) : array();
-              if (!in_array('external', $classes)) {
-                  $classes[] = 'external';
-              }
-              $a->setAttribute('class', trim(implode(' ', $classes)));
-          }
-
-          $wrapper = $dom->getElementsByTagName('div')->item(0);
-          $result  = '';
-          foreach ($wrapper->childNodes as $child) {
-              $result .= $dom->saveHTML($child);
-          }
-
-          return $result;
       }
-
-      $notification_text = add_external_link_class($row_get_notifications['text']);
+      $allowed = '<p><br><br/><b><strong><i><em><u><ul><ol><li><pre><span><div><a>';
+      $notification_text = strip_tags($rawText, $allowed);
+      $notification_text = preg_replace_callback(
+          '/<a\s+([^>]*href=["\']([^"\']+)["\'][^>]*)>/i',
+          function ($m) {
+              $href = $m[2];
+              if (!preg_match('#^https?://#i', $href)) {
+                  return '<a href="#" class="external">';
+              }
+              return '<a class="external adet__link" href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener noreferrer">';
+          },
+          $notification_text
+      );
 
  ?> 
  <!DOCTYPE html>
@@ -146,8 +126,8 @@
               <circle cx="12" cy="12" r="8.5"/>
               <path d="M12 7.5V12l3 2"/>
             </svg><?php echo date("d M, Y",$row_get_notifications['date']);?></p>
-          <h2 class="adet__title"><?php echo $row_get_notifications['title'];?></h2>
-          <p class="adet__text"><?php echo $notification_text;?></p>
+          <h2 class="adet__title"><?php echo htmlspecialchars((string) $row_get_notifications['title'], ENT_QUOTES, 'UTF-8'); ?></h2>
+          <div class="adet__text"><?php echo $notification_text; ?></div>
 
           <!--<a class="adet__link" href="http://www.google.com" target="_blank" rel="noopener">http://www.google.com</a>-->
         </div>
@@ -177,7 +157,7 @@
       <span class="nav__dot"></span>
     </a>
 
-  <a class="nav__item  " href="parent-timeline.php">
+  <a class="nav__item  " href="parent-calendar.php?kid=<?php echo (int) $kid_id; ?>">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <rect x="3" y="4" width="18" height="18" rx="2"/>
         <line x1="16" y1="2" x2="16" y2="6"/>

@@ -77,6 +77,9 @@
 /* Dual staff: reopen must show Emp/Parent chooser, not last parent screen. */
 (function () {
   if ((document.cookie || '').indexOf('helalia_dual_staff=1') === -1) return;
+  var path = location.pathname || '';
+  // Don't interrupt reading alerts / alert detail.
+  if (/parent-alerts?\.php/.test(path)) return;
   if ((location.search || '').indexOf('dual_picked=1') !== -1) {
     try { sessionStorage.setItem('helalia_dual_pick', '1'); } catch (e) {}
     return;
@@ -84,6 +87,6 @@
   var picked = false;
   try { picked = sessionStorage.getItem('helalia_dual_pick') === '1'; } catch (e) { return; }
   if (picked) return;
-  var lang = (location.pathname || '').indexOf('/arb/') !== -1 ? 'arb' : 'eng';
+  var lang = path.indexOf('/arb/') !== -1 ? 'arb' : 'eng';
   location.replace('../../emp/' + lang + '/choose-role.php?fresh=1');
 })();

@@ -61,7 +61,7 @@ if(isset($_POST['submit'])){
                                 GetSQLValueString($database,$row_get_target['app_login_id'], "int"),
                                 GetSQLValueString($database,$row_get_target['kid_id'], "int"),
                                 GetSQLValueString($database,$row_get_classs['id'], "int"),
-                                GetSQLValueString($database,$_POST['title']."<br>,<pre style='white-space:pre-wrap'>".$_POST['msg']."</pre>", "text"),
+                                GetSQLValueString($database,"<pre style='white-space:pre-wrap'>".$_POST['msg']."</pre>", "text"),
                                 GetSQLValueString($database,time(), "int"),
                                 GetSQLValueString($database,6, "int"));
 
@@ -90,7 +90,7 @@ if(isset($_POST['submit'])){
                                 GetSQLValueString($database,$image_name, "text"),
                                 GetSQLValueString($database,$_POST['title'], "text"),
                                 GetSQLValueString($database,$row_get_target['id'], "int"),
-                                GetSQLValueString($database,$_POST['title']."<br>,<pre style='white-space:pre-wrap'>".$_POST['msg']."</pre>", "text"),
+                                GetSQLValueString($database,"<pre style='white-space:pre-wrap'>".$_POST['msg']."</pre>", "text"),
                                 GetSQLValueString($database,time(), "int"),
                                 GetSQLValueString($database,6, "int"));
 
@@ -115,7 +115,7 @@ if(isset($_POST['submit'])){
                                 GetSQLValueString($database,$image_name, "text"),
                                 GetSQLValueString($database,$_POST['title'], "text"),
                                 GetSQLValueString($database,$row_get_target['id'], "int"),
-                                GetSQLValueString($database,$_POST['title']."<br>,<pre style='white-space:pre-wrap'>".$_POST['msg']."</pre>", "text"),
+                                GetSQLValueString($database,"<pre style='white-space:pre-wrap'>".$_POST['msg']."</pre>", "text"),
                                 GetSQLValueString($database,time(), "int"),
                                 GetSQLValueString($database,6, "int"));
 
@@ -143,7 +143,7 @@ if(isset($_POST['submit'])){
                                 GetSQLValueString($database,$row_get_target['app_login_id'], "int"),
                                 GetSQLValueString($database,$row_get_target['kid_id'], "int"), 
                                 GetSQLValueString($database,$row_get_target['class'], "int"), 
-                                GetSQLValueString($database,$_POST['title']."<br>,<pre style='white-space:pre-wrap'>".$_POST['msg']."</pre>", "text"),
+                                GetSQLValueString($database,"<pre style='white-space:pre-wrap'>".$_POST['msg']."</pre>", "text"),
                                 GetSQLValueString($database,time(), "int"),
                                 GetSQLValueString($database,6, "int"));
 
@@ -169,7 +169,7 @@ if(isset($_POST['submit'])){
                                 GetSQLValueString($database,$row_get_target['app_login_id'], "int"),
                                 GetSQLValueString($database,$row_get_target['kid_id'], "int"), 
                                 GetSQLValueString($database,$row_get_target['class'], "int"), 
-                                GetSQLValueString($database,$_POST['title']."<br>,<pre style='white-space:pre-wrap'>".$_POST['msg']."</pre>", "text"),
+                                GetSQLValueString($database,"<pre style='white-space:pre-wrap'>".$_POST['msg']."</pre>", "text"),
                                 GetSQLValueString($database,time(), "int"),
                                 GetSQLValueString($database,6, "int"));
 

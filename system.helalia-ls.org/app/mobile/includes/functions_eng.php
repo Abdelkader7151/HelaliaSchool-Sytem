@@ -460,34 +460,59 @@ function optimizeImage($source, $destination, $extension, $maxWidth = 1600, $max
 
 
 
+/** Unread alerts older than this many days are not "new" for the bell badge. */
+function helalia_alert_new_days()
+{
+  return 14;
+}
+
+function helalia_alert_new_since()
+{
+  return time() - (helalia_alert_new_days() * 86400);
+}
+
+/**
+ * Bell badge: count only recent unread (last N days). Old unread backlog is ignored.
+ */
 function alert($parent_id, $kid_id)
 {
   global $database;
-   if($kid_id>0){
-     
-    $query_get_alert = "SELECT count(id) AS `total` FROM `notifications` WHERE `kid_id` = '{$kid_id}' AND `view` = 0 AND del = 0";
+  $since = (int) helalia_alert_new_since();
+  $parent_id = (int) $parent_id;
+  $kid_id = (int) $kid_id;
+
+  if ($kid_id > 0) {
+    $query_get_alert = "SELECT COUNT(`id`) AS `total` FROM `notifications` WHERE `kid_id` = '{$kid_id}' AND `view` = 0 AND `del` = 0 AND `date` >= '{$since}'";
     $get_alert = mysqli_query($database, $query_get_alert) or die(mysqli_error($database));
-    $row_get_alert = mysqli_fetch_assoc($get_alert);  
-
-         if($row_get_alert['total']>0){ echo "<span class='bell__badge'>".$row_get_alert['total']."</span>";}  
-
-   }else{
-    $query_get_kids_list_alert = "SELECT `kid_id` FROM `kids_list` where `parent_id` = '{$parent_id}'  ";
-    $get_kids_list_alert = mysqli_query($database, $query_get_kids_list_alert) or die(mysqli_error($database));
-    $row_get_kids_list_alert = mysqli_fetch_assoc($get_kids_list_alert);
-    $totalRows_get_kids_list_alert = mysqli_num_rows($get_kids_list_alert);
-         if($totalRows_get_kids_list_alert>0){
-              $alerts = 0;
-                  do{
-                      $query_get_alert = "SELECT count(id) as `total` FROM `notifications` WHERE `kid_id` = '{$row_get_kids_list_alert['kid_id']}' AND `view` = 0 AND del = 0 ";
-                      $get_alert = mysqli_query($database, $query_get_alert) or die(mysqli_error($database));
-                      $row_get_alert = mysqli_fetch_assoc($get_alert); 
-                      $alerts += $row_get_alert['total'];   
-                  }while($row_get_kids_list_alert = mysqli_fetch_assoc($get_kids_list_alert));   
-                  
-                  if($alerts>0){echo "<span class='bell__badge'>".$alerts."</span>";} 
-                }   
+    $row_get_alert = mysqli_fetch_assoc($get_alert);
+    if ($row_get_alert && (int) $row_get_alert['total'] > 0) {
+      echo "<span class='bell__badge'>" . (int) $row_get_alert['total'] . "</span>";
     }
+    return;
+  }
+
+  $query_get_kids_list_alert = "SELECT `kid_id` FROM `kids_list` WHERE `parent_id` = '{$parent_id}'";
+  $get_kids_list_alert = mysqli_query($database, $query_get_kids_list_alert) or die(mysqli_error($database));
+  $row_get_kids_list_alert = mysqli_fetch_assoc($get_kids_list_alert);
+  $totalRows_get_kids_list_alert = mysqli_num_rows($get_kids_list_alert);
+  if ($totalRows_get_kids_list_alert < 1) {
+    return;
+  }
+
+  $alerts = 0;
+  do {
+    $kid = (int) $row_get_kids_list_alert['kid_id'];
+    $query_get_alert = "SELECT COUNT(`id`) AS `total` FROM `notifications` WHERE `kid_id` = '{$kid}' AND `view` = 0 AND `del` = 0 AND `date` >= '{$since}'";
+    $get_alert = mysqli_query($database, $query_get_alert) or die(mysqli_error($database));
+    $row_get_alert = mysqli_fetch_assoc($get_alert);
+    if ($row_get_alert) {
+      $alerts += (int) $row_get_alert['total'];
+    }
+  } while ($row_get_kids_list_alert = mysqli_fetch_assoc($get_kids_list_alert));
+
+  if ($alerts > 0) {
+    echo "<span class='bell__badge'>{$alerts}</span>";
+  }
 }
 
 

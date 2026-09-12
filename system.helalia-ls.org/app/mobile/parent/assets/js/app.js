@@ -40,28 +40,20 @@
     } catch (err) {}
   }
 
-  // Reliable back for WebView: prefer real history when the previous page is
-  // another parent screen; otherwise use the explicit fallback href.
+  // Reliable back for the WebView: never history.back() — that loops
+  // (alerts ↔ alert detail). Always go to the explicit href and replace
+  // the current history entry so Back does not bounce between two pages.
   document.addEventListener('click', function (e) {
-    var el = e.target.closest('[data-helalia-back]');
+    var el = e.target.closest('a.back, a[data-helalia-back]');
     if (!el) return;
+    var dest = el.getAttribute('data-helalia-back') || el.getAttribute('href') || '';
+    if (!dest || dest === '#' || dest.indexOf('javascript:') === 0) return;
     e.preventDefault();
-    var fallback = el.getAttribute('data-helalia-back') || el.getAttribute('href') || 'parent-view.php';
-    var ref = document.referrer || '';
-    var useHistory = false;
     try {
-      if (ref && history.length > 1) {
-        var u = new URL(ref, location.href);
-        if (u.origin === location.origin && u.href.split('#')[0] !== location.href.split('#')[0] && /\/parent\//.test(u.pathname)) {
-          useHistory = true;
-        }
-      }
-    } catch (err) {}
-    if (useHistory) {
-      history.back();
-      return;
+      location.replace(dest);
+    } catch (err) {
+      location.href = dest;
     }
-    location.href = fallback;
   });
 
   // One-app login: phone decides parent / student / office-teacher home.

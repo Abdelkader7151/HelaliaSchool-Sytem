@@ -1,4 +1,4 @@
-<?php require_once('../../Connections/database.php');
+﻿<?php require_once('../../Connections/database.php');
       include("../../includes/logout.php");
       include("../../includes/access.php");
       include("../../includes/functions_eng.php");
@@ -18,7 +18,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Helalia">
 <meta name="format-detection" content="telephone=no">
-<title>Subjects · Helalia</title>
+<title>Subjects Â· Helalia</title>
 <link rel="icon" href="../assets/img/logo-icon.png">
 <link rel="apple-touch-icon" href="../assets/img/logo-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -203,7 +203,7 @@
     }
     media.classList.toggle('light__frame--vid', d.kind === 'video');
 
-    document.getElementById('pm-date').textContent = d.date + (d.kind === 'video' ? ' · Video' : '');
+    document.getElementById('pm-date').textContent = d.date + (d.kind === 'video' ? ' Â· Video' : '');
     document.getElementById('pm-title').textContent = d.title || '';
     document.getElementById('pm-text').textContent = d.text || '';
 
@@ -239,6 +239,6 @@
   }
 })();
 </script>
-<script src="../assets/js/app.js?v=37" defer></script>
+<script src="../assets/js/app.js?v=41" defer></script>
 </body>
 </html>

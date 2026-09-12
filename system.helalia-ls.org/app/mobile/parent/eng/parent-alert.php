@@ -1,4 +1,4 @@
-<?php require_once('../../Connections/database.php');
+﻿<?php require_once('../../Connections/database.php');
       include("../../includes/logout.php");
       include("../../includes/access.php");
       include("../../includes/functions_eng.php");
@@ -107,7 +107,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Helalia">
 <meta name="format-detection" content="telephone=no">
-<title>Alerts · Helalia</title>
+<title>Alerts Â· Helalia</title>
 <link rel="icon" href="../assets/img/logo-icon.png">
 <link rel="apple-touch-icon" href="../assets/img/logo-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -219,6 +219,6 @@
 
 </div>
  
-<script src="../assets/js/app.js?v=37" defer></script>
+<script src="../assets/js/app.js?v=41" defer></script>
 </body>
 </html>

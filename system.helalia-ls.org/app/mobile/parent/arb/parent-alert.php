@@ -1,4 +1,4 @@
-<?php require_once('../../Connections/database.php');
+﻿<?php require_once('../../Connections/database.php');
       include("../../includes/logout.php");
       include("../../includes/access.php");
       include("../../includes/functions_arb.php");
@@ -106,7 +106,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Helalia">
 <meta name="format-detection" content="telephone=no">
-<title>المواد · هلاليا</title>
+<title>Ø§Ù„Ù…ÙˆØ§Ø¯ Â· Ù‡Ù„Ø§Ù„ÙŠØ§</title>
 <link rel="icon" href="../assets/img/logo-icon.png">
 <link rel="apple-touch-icon" href="../assets/img/logo-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -122,11 +122,11 @@
 <div class="app">
   <header class="hero hero--tall">
     <div class="hero__row">
-        <a class="back" href="<?php echo htmlspecialchars($alertsBack, ENT_QUOTES, 'UTF-8'); ?>" data-helalia-back="<?php echo htmlspecialchars($alertsBack, ENT_QUOTES, 'UTF-8'); ?>" aria-label="رجوع">
+        <a class="back" href="<?php echo htmlspecialchars($alertsBack, ENT_QUOTES, 'UTF-8'); ?>" data-helalia-back="<?php echo htmlspecialchars($alertsBack, ENT_QUOTES, 'UTF-8'); ?>" aria-label="Ø±Ø¬ÙˆØ¹">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M15 19 8 12l7-7"/></svg>
         </a>
-         <h1 class="hero__title">الاشعارات</h1> 
+         <h1 class="hero__title">Ø§Ù„Ø§Ø´Ø¹Ø§Ø±Ø§Øª</h1> 
       </div> 
     </header>
     
@@ -150,15 +150,15 @@
       </article>
 
       <div class="adet__actions">
-        <a class="btn btn--quiet" href="<?php echo htmlspecialchars($alertsBack, ENT_QUOTES, 'UTF-8'); ?>" data-helalia-back="<?php echo htmlspecialchars($alertsBack, ENT_QUOTES, 'UTF-8'); ?>">العودة إلى التنبيهات</a>
-        <a class="btn btn--danger" href="<?php echo htmlspecialchars($delUrl, ENT_QUOTES, 'UTF-8'); ?>" type="button">حذف</a>
+        <a class="btn btn--quiet" href="<?php echo htmlspecialchars($alertsBack, ENT_QUOTES, 'UTF-8'); ?>" data-helalia-back="<?php echo htmlspecialchars($alertsBack, ENT_QUOTES, 'UTF-8'); ?>">Ø§Ù„Ø¹ÙˆØ¯Ø© Ø¥Ù„Ù‰ Ø§Ù„ØªÙ†Ø¨ÙŠÙ‡Ø§Øª</a>
+        <a class="btn btn--danger" href="<?php echo htmlspecialchars($delUrl, ENT_QUOTES, 'UTF-8'); ?>" type="button">Ø­Ø°Ù</a>
       </div> 
   </main>
     
       
       
       
-    <nav class="nav" aria-label="الرئيسية"  style="height: 90px">
+    <nav class="nav" aria-label="Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ©"  style="height: 90px">
 
       <a class="nav__item" href="parent-view.php">
          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -167,7 +167,7 @@
           <path d="M16.5 5.5a3.2 3.2 0 0 1 0 6"/>
           <path d="M18 13.5a6 6 0 0 1 3 5.5"/>
         </svg>
-        <span>الطلاب</span>
+        <span>Ø§Ù„Ø·Ù„Ø§Ø¨</span>
         <span class="nav__dot"></span>
       </a>
 
@@ -178,7 +178,7 @@
           <line x1="8" y1="2" x2="8" y2="6"/>
           <line x1="3" y1="10" x2="21" y2="10"/>
         </svg>
-        <span>التقويم</span>
+        <span>Ø§Ù„ØªÙ‚ÙˆÙŠÙ…</span>
         <span class="nav__dot"></span>
       </a>
 
@@ -192,7 +192,7 @@
           <path d="M17 9h2.5A1.5 1.5 0 0 1 21 10.5v7a1.5 1.5 0 0 1-1.5 1.5H17"></path>
           <path d="M7.5 8.5h6M7.5 12h6M7.5 15.5h3.5"></path>
         </svg>
-        <span>الأخبار</span>
+        <span>Ø§Ù„Ø£Ø®Ø¨Ø§Ø±</span>
         <span class="nav__dot"></span>
       </a>
 
@@ -201,7 +201,7 @@
           <circle cx="12" cy="12" r="3"/>
           <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>
         </svg>
-        <span>الإعدادات</span>
+        <span>Ø§Ù„Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª</span>
         <span class="nav__dot"></span>
       </a>
 
@@ -209,6 +209,6 @@
 
 </div>
 
-<script src="../assets/js/app.js?v=37" defer></script>
+<script src="../assets/js/app.js?v=41" defer></script>
 </body>
 </html>

@@ -19,7 +19,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Helalia">
 <meta name="format-detection" content="telephone=no">
-<title>Ø§Ù„Ù…ÙˆØ§Ø¯ Â· Ù‡Ù„Ø§Ù„ÙŠØ§</title>
+<title>المواد · هلاليا</title>
 <link rel="icon" href="../assets/img/logo-icon.png">
 <link rel="apple-touch-icon" href="../assets/img/logo-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,13 +33,13 @@
     
   <header class="hero hero--tall">
     <div class="hero__row">
-         <a class="back" href="parent-view.php" data-helalia-back="parent-view.php" aria-label="Ø±Ø¬ÙˆØ¹">  
+         <a class="back" href="parent-view.php" data-helalia-back="parent-view.php" aria-label="رجوع">  
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M15 19 8 12l7-7"/></svg>
         </a>
-         <h1 class="hero__title">Ø£Ø­Ø¯Ø« Ø§Ù„Ø£Ø®Ø¨Ø§Ø±</h1>
+         <h1 class="hero__title">أحدث الأخبار</h1>
          <div class="bells">
-          <a class="bell bell--alert" href="parent-alerts.php" aria-label="ØªÙ†Ø¨ÙŠÙ‡Ø§Øª">
+          <a class="bell bell--alert" href="parent-alerts.php" aria-label="تنبيهات">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M6 16V10a6 6 0 1 1 12 0v6l1.5 2H4.5L6 16z"></path>
               <path d="M10 20a2 2 0 0 0 4 0"></path>
@@ -113,9 +113,9 @@
         </div>
         <div class="post__foot">
            <?php if($has_banner){?>
-          <span class="post__tag">ØµÙˆØ±Ø©</span>
+          <span class="post__tag">صورة</span>
            <?php }?>
-          <span>Ø§Ø¶ØºØ· Ù„Ù„Ù‚Ø±Ø§Ø¡Ø© Ø§Ù„Ù…Ø²ÙŠØ¯</span>
+          <span>اضغط للقراءة المزيد</span>
         </div>
       </button>
 <?php $i++; }while($row_get_timeline = mysqli_fetch_assoc($get_timeline));?>
@@ -129,7 +129,7 @@
        <?php }} ?>
     </main>
     
-   <nav class="nav nav--trio" aria-label="Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ©" style="height: 90px">
+   <nav class="nav nav--trio" aria-label="الرئيسية" style="height: 90px">
 
     <a class="nav__item is-active" href="parent-view.php">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -138,7 +138,7 @@
         <path d="M16.5 5.5a3.2 3.2 0 0 1 0 6"/>
         <path d="M18 13.5a6 6 0 0 1 3 5.5"/>
       </svg>
-      <span>Ø§Ù„Ø·Ù„Ø§Ø¨</span>
+      <span>الطلاب</span>
       <span class="nav__dot"></span>
     </a>
 
@@ -148,7 +148,7 @@
         <path d="M17 9h2.5A1.5 1.5 0 0 1 21 10.5v7a1.5 1.5 0 0 1-1.5 1.5H17"/>
         <path d="M7.5 8.5h6M7.5 12h6M7.5 15.5h3.5"/>
       </svg>
-      <span>Ø§Ù„Ø§Ø®Ø¨Ø§Ø±</span>
+      <span>الاخبار</span>
       <span class="nav__dot"></span>
     </a>
 
@@ -156,7 +156,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>
       </svg>
-      <span>Ø§Ù„Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª</span>
+      <span>الإعدادات</span>
       <span class="nav__dot"></span>
     </a>
 
@@ -201,7 +201,7 @@
     }
     media.classList.toggle('light__frame--vid', d.kind === 'video');
 
-    document.getElementById('pm-date').textContent = d.date + (d.kind === 'video' ? ' Â· Video' : '');
+    document.getElementById('pm-date').textContent = d.date + (d.kind === 'video' ? ' · Video' : '');
     document.getElementById('pm-title').textContent = d.title || '';
     document.getElementById('pm-text').textContent = d.text || '';
 

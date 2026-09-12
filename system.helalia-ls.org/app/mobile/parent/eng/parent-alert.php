@@ -1,4 +1,4 @@
-﻿<?php require_once('../../Connections/database.php');
+<?php require_once('../../Connections/database.php');
       include("../../includes/logout.php");
       include("../../includes/access.php");
       include("../../includes/functions_eng.php");

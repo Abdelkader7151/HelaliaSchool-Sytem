@@ -64,7 +64,7 @@
 <div class="app">
   <header class="hero hero--tall">
     <div class="hero__row">
-      <a class="back" href="parent-homework.php?id=<?php echo $kid_id;?>" aria-label="رجوع">
+      <a class="back" href="parent-revision.php?id=<?php echo $kid_id;?>" aria-label="رجوع">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M15 19 8 12l7-7"/>
         </svg>

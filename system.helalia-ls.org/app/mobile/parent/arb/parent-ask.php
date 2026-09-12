@@ -243,7 +243,7 @@ $totalRows_get_question = mysqli_num_rows($get_question);
 
  <header class="hero hero--tall">
     <div class="hero__row">
-        <a class="back" href="parent-kid.php?kid=<?php echo $row_get_kid_data['id'];?>" aria-label="رجوع">
+        <a class="back" href="parent-kid.php?id=<?php echo $row_get_kid_data['id'];?>" aria-label="رجوع">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M15 19 8 12l7-7"/></svg>
         </a>

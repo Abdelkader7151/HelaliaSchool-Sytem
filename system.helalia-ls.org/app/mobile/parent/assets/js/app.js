@@ -27,9 +27,10 @@
   });
 
   // Keep the scroll position of the inner page across back/forward.
+  // Include query string so alerts tabs / Load more don't share one scroll slot.
   var page = document.querySelector('.page');
   if (page) {
-    var key = 'helalia:' + location.pathname;
+    var key = 'helalia:' + location.pathname + (location.search || '');
     try {
       var saved = sessionStorage.getItem(key);
       if (saved) page.scrollTop = parseInt(saved, 10) || 0;
@@ -38,6 +39,30 @@
       }, { passive: true });
     } catch (err) {}
   }
+
+  // Reliable back for WebView: prefer real history when the previous page is
+  // another parent screen; otherwise use the explicit fallback href.
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-helalia-back]');
+    if (!el) return;
+    e.preventDefault();
+    var fallback = el.getAttribute('data-helalia-back') || el.getAttribute('href') || 'parent-view.php';
+    var ref = document.referrer || '';
+    var useHistory = false;
+    try {
+      if (ref && history.length > 1) {
+        var u = new URL(ref, location.href);
+        if (u.origin === location.origin && u.href.split('#')[0] !== location.href.split('#')[0] && /\/parent\//.test(u.pathname)) {
+          useHistory = true;
+        }
+      }
+    } catch (err) {}
+    if (useHistory) {
+      history.back();
+      return;
+    }
+    location.href = fallback;
+  });
 
   // One-app login: phone decides parent / student / office-teacher home.
   var loginForm = document.getElementById('login-form');
@@ -78,8 +103,9 @@
 (function () {
   if ((document.cookie || '').indexOf('helalia_dual_staff=1') === -1) return;
   var path = location.pathname || '';
-  // Don't interrupt reading alerts / alert detail.
+  // Don't interrupt reading alerts / alert detail / news.
   if (/parent-alerts?\.php/.test(path)) return;
+  if (/parent-timeline\.php/.test(path)) return;
   if ((location.search || '').indexOf('dual_picked=1') !== -1) {
     try { sessionStorage.setItem('helalia_dual_pick', '1'); } catch (e) {}
     return;

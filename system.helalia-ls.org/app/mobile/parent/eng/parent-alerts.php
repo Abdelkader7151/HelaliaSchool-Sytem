@@ -23,14 +23,27 @@ if (isset($_GET['mark_all']) && (string) $_GET['mark_all'] === '1') {
 
 if (isset($_GET['del']) && escape($_GET['del']) > 0) {
     $del = escape($_GET['del']);
-    $kid_id = escape($_GET['kid']);
+    $delKid = escape($_GET['kid']);
     $updateSQL1 = sprintf(
         "UPDATE `notifications` SET `del`=%s WHERE `id`=%s AND `kid_id`=%s",
         GetSQLValueString($database, 1, "int"),
         GetSQLValueString($database, $del, "int"),
-        GetSQLValueString($database, $kid_id, "int")
+        GetSQLValueString($database, $delKid, "int")
     );
     mysqli_query($database, $updateSQL1) or die(mysqli_error($database));
+    $redir = 'parent-alerts.php';
+    $rq = array();
+    if (isset($_GET['list_kid']) && (int) $_GET['list_kid'] > 0) {
+        $rq[] = 'kid=' . (int) $_GET['list_kid'];
+    }
+    if (isset($_GET['list_more']) && (int) $_GET['list_more'] > 0) {
+        $rq[] = 'more=' . (int) $_GET['list_more'];
+    }
+    if ($rq) {
+        $redir .= '?' . implode('&', $rq);
+    }
+    header('Location: ' . $redir);
+    exit();
 }
 
 $kid_id = 0;
@@ -66,10 +79,11 @@ if ($kid_id > 0) {
 $kidIds = array_values(array_filter($kidIds));
 $inKids = $kidIds ? implode(',', $kidIds) : '0';
 
-// Recent window only (same as badge "new"), newest first. Unread first within that set.
+// Recent window only (same as badge "new"), newest first.
+// Stable id order so opening an alert (marks read) does not reshuffle the list on back.
 $listSql = "SELECT * FROM `notifications`
   WHERE `del` = 0 AND `kid_id` IN ({$inKids}) AND `date` >= '{$since}'
-  ORDER BY (`view` = 0) DESC, `id` DESC
+  ORDER BY `id` DESC
   LIMIT " . (int) ($pageSize + 1) . " OFFSET " . (int) $offset;
 $get_notifications = mysqli_query($database, $listSql) or die(mysqli_error($database));
 $rows = array();
@@ -119,7 +133,10 @@ $typeLabel = function ($t) {
 <div class="app">
   <header class="hero hero--tall">
     <div class="hero__row">
-      <a class="back" href="parent-view.php" aria-label="Back">
+<?php
+      $alertsBack = ($kid_id > 0) ? ('parent-kid.php?id=' . (int) $kid_id) : 'parent-view.php';
+?>
+      <a class="back" href="<?php echo htmlspecialchars($alertsBack, ENT_QUOTES, 'UTF-8'); ?>" data-helalia-back="<?php echo htmlspecialchars($alertsBack, ENT_QUOTES, 'UTF-8'); ?>" aria-label="Back">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 19 8 12l7-7"/></svg>
       </a>
       <h1 class="hero__title">Alerts</h1>
@@ -161,9 +178,12 @@ if (count($tabRows) > 1) { ?>
     foreach ($rows as $n) {
         $isUnread = ((int) $n['view'] === 0);
         $rowClass = $isUnread ? 'row is-unread' : 'row is-read';
-        $href = 'parent-alert.php?id=' . (int) $n['id'] . '&kid=' . (int) $n['kid_id'];
+        $href = 'parent-alert.php?id=' . (int) $n['id'] . '&kid=' . (int) $n['kid_id'] . '&list_kid=' . (int) $kid_id;
+        if ($offset > 0) {
+            $href .= '&list_more=' . (int) $offset;
+        }
 ?>
-      <a class="<?php echo $rowClass; ?>" href="<?php echo $href; ?>">
+      <a class="<?php echo $rowClass; ?>" href="<?php echo htmlspecialchars($href, ENT_QUOTES, 'UTF-8'); ?>">
         <span class="row__ico">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4h8a2 2 0 0 1 2 2v14l-6-3-6 3V6a2 2 0 0 1 2-2z"/></svg>
         </span>
@@ -229,6 +249,6 @@ if (count($tabRows) > 1) { ?>
   </nav>
 <?php } ?>
 </div>
-<script src="../assets/js/app.js?v=35" defer></script>
+<script src="../assets/js/app.js?v=37" defer></script>
 </body>
 </html>

@@ -48,6 +48,30 @@
 
            mysqli_query($database , $updateSQL1) or die(mysqli_error($database));   
 
+      $listKid = isset($_GET['list_kid']) ? (int) $_GET['list_kid'] : -1;
+      if ($listKid < 0) {
+          $listKid = (int) $kid_id;
+      }
+      $listMore = isset($_GET['list_more']) ? max(0, (int) $_GET['list_more']) : 0;
+      $alertsBack = 'parent-alerts.php';
+      $q = array();
+      if ($listKid > 0) {
+          $q[] = 'kid=' . $listKid;
+      }
+      if ($listMore > 0) {
+          $q[] = 'more=' . $listMore;
+      }
+      if ($q) {
+          $alertsBack .= '?' . implode('&', $q);
+      }
+      $delUrl = 'parent-alerts.php?del=' . (int) $id . '&kid=' . (int) $kid_id;
+      if ($listKid > 0) {
+          $delUrl .= '&list_kid=' . $listKid;
+      }
+      if ($listMore > 0) {
+          $delUrl .= '&list_more=' . $listMore;
+      }
+
       $rawText = (string) $row_get_notifications['text'];
       $title = trim((string) $row_get_notifications['title']);
       if ($title !== '' && strpos($rawText, $title) === 0) {
@@ -98,7 +122,7 @@
 <div class="app">
   <header class="hero hero--tall">
     <div class="hero__row">
-        <a class="back" href="parent-alerts.php?kid=<?php echo $kid_id;?>" aria-label="رجوع">
+        <a class="back" href="<?php echo htmlspecialchars($alertsBack, ENT_QUOTES, 'UTF-8'); ?>" data-helalia-back="<?php echo htmlspecialchars($alertsBack, ENT_QUOTES, 'UTF-8'); ?>" aria-label="رجوع">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M15 19 8 12l7-7"/></svg>
         </a>
@@ -126,8 +150,8 @@
       </article>
 
       <div class="adet__actions">
-        <a class="btn btn--quiet"  href="parent-alerts.php?kid=<?php echo $kid_id;?>">العودة إلى التنبيهات</a>
-        <a class="btn btn--danger" href="parent-alerts.php?kid=<?php echo $kid_id;?>&del=<?php echo $id;?>" type="button">حذف</a>
+        <a class="btn btn--quiet" href="<?php echo htmlspecialchars($alertsBack, ENT_QUOTES, 'UTF-8'); ?>" data-helalia-back="<?php echo htmlspecialchars($alertsBack, ENT_QUOTES, 'UTF-8'); ?>">العودة إلى التنبيهات</a>
+        <a class="btn btn--danger" href="<?php echo htmlspecialchars($delUrl, ENT_QUOTES, 'UTF-8'); ?>" type="button">حذف</a>
       </div> 
   </main>
     
@@ -185,6 +209,6 @@
 
 </div>
 
-<script src="../assets/js/app.js" defer></script>
+<script src="../assets/js/app.js?v=37" defer></script>
 </body>
 </html>

@@ -33,10 +33,10 @@
     
   <header class="hero hero--tall">
     <div class="hero__row">
-         <button type="button" class="back" aria-label="رجوع" onclick="history.back();">  
+         <a class="back" href="parent-view.php" data-helalia-back="parent-view.php" aria-label="رجوع">  
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M15 19 8 12l7-7"/></svg>
-        </button>
+        </a>
          <h1 class="hero__title">أحدث الأخبار</h1>
          <div class="bells">
           <a class="bell bell--alert" href="parent-alerts.php" aria-label="تنبيهات">
@@ -237,6 +237,6 @@
   }
 })();
 </script>
-<script src="../assets/js/app.js" defer></script>
+<script src="../assets/js/app.js?v=37" defer></script>
 </body>
 </html>

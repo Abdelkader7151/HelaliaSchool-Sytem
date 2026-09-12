@@ -4,6 +4,9 @@ if (!isset($_SESSION)) {
 }
 require_once __DIR__ . '/local-request.php';
 require_once __DIR__ . '/dual-role.php';
+if (function_exists('dual_ensure_emp_backup_from_helu')) {
+    dual_ensure_emp_backup_from_helu();
+}
 dual_restore_emp_session_for_staff_boot();
 if (empty($_SESSION['staff_csrf'])) {
     $_SESSION['staff_csrf'] = bin2hex(function_exists('random_bytes') ? random_bytes(16) : openssl_random_pseudo_bytes(16));

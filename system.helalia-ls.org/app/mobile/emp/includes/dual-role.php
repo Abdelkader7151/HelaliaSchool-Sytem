@@ -256,6 +256,100 @@ function dual_clear_emp_backup_after_emp_role()
     unset($_SESSION['helalia_emp_backup']);
 }
 
+/**
+ * Rebuild emp backup from helu/help cookies when the PHP session lost it.
+ * Dual Parent mode keeps emp cookies on purpose — use them to restore Switch role.
+ */
+function dual_ensure_emp_backup_from_helu()
+{
+    if (!empty($_SESSION['helalia_emp_backup']) && is_array($_SESSION['helalia_emp_backup'])
+        && !empty($_SESSION['helalia_emp_backup']['MM_Userid'])) {
+        return true;
+    }
+    global $database, $database_database;
+    $helu = isset($_COOKIE['helu']) ? trim((string) $_COOKIE['helu']) : '';
+    $help = isset($_COOKIE['help']) ? (string) $_COOKIE['help'] : '';
+    if ($helu === '' || !dual_manual_parent_info_for_phone($helu)) {
+        return false;
+    }
+    if (!isset($database) || !($database instanceof mysqli)) {
+        return false;
+    }
+    if (!empty($database_database)) {
+        mysqli_select_db($database, $database_database);
+    } elseif (!empty($GLOBALS['database_database'])) {
+        mysqli_select_db($database, $GLOBALS['database_database']);
+    }
+    $phoneEsc = dual_esc($helu);
+    $row = null;
+    $q = mysqli_query(
+        $database,
+        "SELECT `id`, `phone`, `password`, `account_type`, `phone_id` FROM `app_login`
+         WHERE `phone` = '{$phoneEsc}' AND `account_type` = 2 LIMIT 1"
+    );
+    if ($q) {
+        $row = mysqli_fetch_assoc($q);
+    }
+    if (!$row) {
+        // Digits-normalized match for staff phone formatting differences.
+        $want = dual_digits($helu);
+        $q2 = mysqli_query(
+            $database,
+            "SELECT `id`, `phone`, `password`, `account_type`, `phone_id` FROM `app_login` WHERE `account_type` = 2"
+        );
+        if ($q2) {
+            while ($r = mysqli_fetch_assoc($q2)) {
+                if (dual_digits($r['phone']) === $want) {
+                    $row = $r;
+                    break;
+                }
+            }
+        }
+    }
+    if (!$row || (int) $row['id'] < 1) {
+        return false;
+    }
+    $_SESSION['helalia_emp_backup'] = array(
+        'MM_Username' => isset($row['phone']) ? $row['phone'] : $helu,
+        'MM_Userid' => (int) $row['id'],
+        'account_type' => 2,
+        'phone_id' => isset($row['phone_id']) ? $row['phone_id'] : null,
+        'helu' => $helu,
+        'help' => ($help !== '' ? $help : (isset($row['password']) ? $row['password'] : '')),
+    );
+    if (!headers_sent()) {
+        setcookie('helalia_dual_staff', '1', time() + (86400 * 365), '/');
+    }
+    $_COOKIE['helalia_dual_staff'] = '1';
+    return true;
+}
+
+/**
+ * Parent Settings: show Switch role whenever this browser is a dual-staff session.
+ * Do not rely only on helalia_emp_backup (PHP session can drop it).
+ */
+function dual_parent_can_switch_role()
+{
+    dual_ensure_emp_backup_from_helu();
+    if (!empty($_SESSION['helalia_emp_backup']) && is_array($_SESSION['helalia_emp_backup'])
+        && !empty($_SESSION['helalia_emp_backup']['MM_Userid'])) {
+        return true;
+    }
+    $helu = isset($_COOKIE['helu']) ? (string) $_COOKIE['helu'] : '';
+    if ($helu !== '' && dual_manual_parent_info_for_phone($helu)) {
+        return true;
+    }
+    if (!empty($_COOKIE['helalia_dual_staff']) && $_COOKIE['helalia_dual_staff'] === '1'
+        && $helu !== '' && dual_manual_parent_info_for_phone($helu)) {
+        return true;
+    }
+    if (isset($_SESSION['helalia_role']) && $_SESSION['helalia_role'] === 'parent'
+        && $helu !== '' && dual_manual_parent_info_for_phone($helu)) {
+        return true;
+    }
+    return false;
+}
+
 function dual_mark_role_pick()
 {
     if (empty($_SESSION['helalia_role_pick_token'])) {
@@ -289,6 +383,8 @@ function dual_role_pick_active()
 function dual_is_manual_dual()
 {
     global $row_get_user, $empId, $database;
+
+    dual_ensure_emp_backup_from_helu();
 
     // Emp/Parent chooser is only for employee logins (or dual session with emp backup).
     // Old/alternate parent-only numbers keep the normal parent UI.
@@ -615,6 +711,9 @@ function dual_find_kid($kidId)
 function dual_has_dual()
 {
     global $dualKids;
+    if (function_exists('dual_ensure_emp_backup_from_helu')) {
+        dual_ensure_emp_backup_from_helu();
+    }
     if (!empty($dualKids)) {
         return true;
     }

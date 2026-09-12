@@ -6,7 +6,17 @@
        //update lang
        language_update($row_get_user['id'],$lang);
 
-       $helaliaCanSwitchRole = (!empty($_SESSION['helalia_emp_backup']) && is_array($_SESSION['helalia_emp_backup']));
+       $helaliaCanSwitchRole = false;
+       $dualRoleFile = __DIR__ . '/../../emp/includes/dual-role.php';
+       if (is_file($dualRoleFile)) {
+           require_once $dualRoleFile;
+           if (function_exists('dual_parent_can_switch_role')) {
+               $helaliaCanSwitchRole = dual_parent_can_switch_role();
+           }
+       }
+       if (!$helaliaCanSwitchRole) {
+           $helaliaCanSwitchRole = (!empty($_SESSION['helalia_emp_backup']) && is_array($_SESSION['helalia_emp_backup']));
+       }
 
  ?>  
  <!DOCTYPE html>

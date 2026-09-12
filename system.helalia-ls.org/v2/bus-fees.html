@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Bus fees · HLS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="assets/css/app.css" rel="stylesheet">
+</head>
+<body data-page="bus-fees" data-title="Bus fees" data-sub="رسوم الباص — registration & collection → accounting">
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="content-wrap">
+    <div id="topbar-mount"></div>
+
+    <div class="page">
+
+      <div class="tabs-nav mb-4" id="books">
+        <a href="accounting-ledger.html">Ledger · الحركة</a>
+        <a href="accounting-treasury.html">Treasury · الخزنة</a>
+        <a href="accounting-bank.html">Bank · البنك</a>
+        <a href="student-fees.html">Student fees · مصاريف الطلبة</a>
+        <a href="bus-fees.html" class="active">Bus fees · رسوم الباص</a>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon blue"><i class="fa-solid fa-file-invoice-dollar"></i></div><div class="kpi-label">Bus fees billed</div><div class="kpi-value mono" id="k-billed" style="font-size:20px;">EGP 0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon green"><i class="fa-solid fa-hand-holding-dollar"></i></div><div class="kpi-label">Collected</div><div class="kpi-value mono" id="k-collected" style="font-size:20px;">EGP 0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon amber"><i class="fa-solid fa-clock"></i></div><div class="kpi-label">Outstanding</div><div class="kpi-value mono" id="k-out" style="font-size:20px;">EGP 0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon purple"><i class="fa-solid fa-bus"></i></div><div class="kpi-label">Registered riders</div><div class="kpi-value" id="k-riders">0</div></div></div>
+      </div>
+
+      <div class="page-head">
+        <div class="d-flex gap-2 align-items-center">
+          <span style="font-weight:600;">Bus registration &amp; fees — تسجيل الباص والرسوم</span>
+          <span class="pill info">Fee comes from each student's registered bus</span>
+        </div>
+        <button class="btn btn-primary" data-perm="edit" onclick="openCollect()"><i class="fa-solid fa-hand-holding-dollar me-1"></i> Collect bus fee</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table mb-0 align-middle">
+          <thead>
+            <tr>
+              <th>Student</th><th>Bus &amp; route</th>
+              <th class="num">Annual fee</th><th class="num">Paid</th><th class="num">Balance</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+          <tfoot id="tfoot"></tfoot>
+        </table>
+      </div>
+
+      <div class="note-row mt-3" style="display:flex;gap:9px;align-items:flex-start;background:var(--primary-soft);border-radius:12px;padding:12px 14px;font-size:12.5px;color:var(--ink-2);">
+        <i class="fa-solid fa-link" style="color:var(--primary);margin-top:2px;"></i>
+        <span>Each bus-fee collection posts a receipt to <b>Treasury / Bank</b> and a journal voucher (DR Cash/Bank · CR <b>4102 Transport revenue</b>) in the <b>General journal</b>.</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===== Collect bus fee modal ===== -->
+<div class="modal fade" id="payModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div><div class="card-title">Collect bus fee</div><div class="card-sub">تحصيل رسوم الباص — posts to accounting</div></div>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3"><label class="form-label">Student (bus riders only)</label><div id="p-student-wrap"></div></div>
+        <div class="d-flex justify-content-between align-items-center p-3 mb-3" style="background:var(--line-2);border-radius:11px;font-size:13px;">
+          <span class="muted" id="p-buslabel">Bus</span><span class="mono" id="p-baltext">—</span>
+        </div>
+        <div class="row g-3">
+          <div class="col-6"><label class="form-label">Date</label><input type="date" class="form-control" id="p-date" value="2026-05-28"></div>
+          <div class="col-6"><label class="form-label">Amount (EGP)</label><input type="number" class="form-control mono" id="p-amount" min="0" placeholder="0"></div>
+          <div class="col-12"><label class="form-label">Received into</label>
+            <div class="d-flex gap-2">
+              <label class="dir-opt flex-fill"><input type="radio" name="method" value="Cash" checked hidden><span class="dir-pill active" data-m="Cash"><i class="fa-solid fa-vault me-1"></i> Cash · الخزنة</span></label>
+              <label class="dir-opt flex-fill"><input type="radio" name="method" value="Bank" hidden><span class="dir-pill" data-m="Bank"><i class="fa-solid fa-landmark me-1"></i> Bank · البنك</span></label>
+            </div>
+          </div>
+        </div>
+        <div class="text-danger small mt-2" id="p-err" style="display:none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light-2" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" onclick="submitPayment()"><i class="fa-solid fa-check me-1"></i> Collect &amp; post</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/autocomplete.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/permissions.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+const PAY_KEY = 'liberty_buspay';
+let payModal;
+const payments = () => { try { return JSON.parse(localStorage.getItem(PAY_KEY)) || []; } catch (_) { return []; } };
+const savePayments = a => localStorage.setItem(PAY_KEY, JSON.stringify(a));
+const paidExtra = id => payments().filter(p => p.studentId === id).reduce((s, p) => s + p.amount, 0);
+const famName = id => (LIBERTY.families.find(f => f.id === id) || {}).name || '—';
+
+function effBus(s) {
+  const f = LIBERTY.busFee(s);
+  const paid = f.paid + paidExtra(s.id);
+  return { ...f, paid, balance: f.fee - paid };
+}
+const riders = () => LIBERTY.roster().filter(s => s.arrival === 'Bus' && s.busId);
+
+function render() {
+  const list = riders();
+  let billed = 0, collected = 0, out = 0;
+  document.getElementById('tbody').innerHTML = list.map(s => {
+    const f = effBus(s);
+    billed += f.fee; collected += f.paid; out += Math.max(0, f.balance);
+    const status = f.balance <= 0 ? ['ok', 'Paid'] : f.paid > 0 ? ['warn', 'Partial'] : ['err', 'Due'];
+    return `
+      <tr>
+        <td><div class="row-avatar"><div class="av amber">${LIBERTY.initials(s.name)}</div>
+          <div><div class="nm">${s.name}</div><div class="meta">${famName(s.familyId)} · ${s.grade}</div></div></div></td>
+        <td><span class="pill amber"><i class="fa-solid fa-bus" style="font-size:9px"></i> ${f.bus ? f.bus.label : '—'}</span>
+          <div class="muted small mt-1">${f.bus ? f.bus.route : ''}</div></td>
+        <td class="num mono">${LIBERTY.money(f.fee)}</td>
+        <td class="num mono">${LIBERTY.money(f.paid)}</td>
+        <td class="num mono fw-bold ${f.balance > 0 ? 'text-danger' : 'text-success'}">${LIBERTY.money(f.balance)}</td>
+        <td><span class="pill ${status[0]}">${status[1]}</span></td>
+      </tr>`;
+  }).join('') || `<tr><td colspan="6" class="text-center muted" style="padding:30px">No bus riders. Register students on a bus from the Students page.</td></tr>`;
+
+  document.getElementById('tfoot').innerHTML = list.length ? `
+    <tr style="border-top:2px solid var(--line);">
+      <td colspan="2" style="font-weight:700;">Totals</td>
+      <td class="num mono fw-bold">${LIBERTY.money(billed)}</td>
+      <td class="num mono fw-bold">${LIBERTY.money(collected)}</td>
+      <td class="num mono fw-bold text-danger">${LIBERTY.money(out)}</td><td></td>
+    </tr>` : '';
+
+  document.getElementById('k-billed').textContent = LIBERTY.money(billed);
+  document.getElementById('k-collected').textContent = LIBERTY.money(collected);
+  document.getElementById('k-out').textContent = LIBERTY.money(out);
+  document.getElementById('k-riders').textContent = list.length;
+}
+
+let pStuAc;
+function onPick() {
+  const s = LIBERTY.roster().find(x => x.id === document.getElementById('p-student').value);
+  if (!s) { document.getElementById('p-baltext').textContent = '—'; return; }
+  const f = effBus(s);
+  document.getElementById('p-buslabel').textContent = (f.bus ? f.bus.label + ' · ' + f.bus.route : 'Bus') + ' — Fee/Paid/Balance';
+  document.getElementById('p-baltext').textContent = `${LIBERTY.money(f.fee)} / ${LIBERTY.money(f.paid)} / ${LIBERTY.money(f.balance)}`;
+  document.getElementById('p-amount').value = f.balance > 0 ? f.balance : '';
+}
+function openCollect() {
+  const list = riders();
+  if (!pStuAc) {
+    LIBERTY.autocompleteField(document.getElementById('p-student-wrap'), 'p-student', 'Type a student name…');
+    pStuAc = LIBERTY.autocomplete({
+      inputId: 'p-student-search', hiddenId: 'p-student', boxId: 'p-student-ac',
+      items: () => riders().map(s => ({ id: s.id, label: s.name, sub: famName(s.familyId) })),
+      onPick: onPick
+    });
+  }
+  pStuAc.setValue(list.length ? list[0].id : '');
+  document.getElementById('p-err').style.display = 'none';
+  setMethod('Cash');
+  if (list.length) onPick();
+  payModal.show();
+}
+function setMethod(m) {
+  document.querySelectorAll('#payModal .dir-pill').forEach(p => p.classList.toggle('active', p.dataset.m === m));
+  document.querySelector(`#payModal input[value="${m}"]`).checked = true;
+}
+function submitPayment() {
+  const s = LIBERTY.roster().find(x => x.id === document.getElementById('p-student').value);
+  const date = document.getElementById('p-date').value;
+  const amount = Math.round(parseFloat(document.getElementById('p-amount').value) || 0);
+  const method = document.querySelector('#payModal input[name="method"]:checked').value;
+  const err = document.getElementById('p-err');
+  if (!s || !date || amount <= 0) { err.textContent = 'Pick a student, date and a valid amount.'; err.style.display = 'block'; return; }
+
+  const list = payments();
+  const receiptNo = 'BUS-' + (7100 + list.length);
+  list.push({ studentId: s.id, date, amount, method, receiptNo });
+  savePayments(list);
+
+  const bus = LIBERTY.busById(s.busId);
+  const desc = `Bus fee — ${s.name} (${bus ? bus.label : ''}) · ${receiptNo}`;
+  if (method === 'Cash') pushTo('liberty_treasury_tx', { date, desc, type: 'Receipt', in: amount, out: 0 });
+  else pushTo('liberty_bank_tx', { date, desc, ref: receiptNo, in: amount, out: 0 });
+
+  const acct = method === 'Cash' ? '1102 · Cash on hand — الخزنة' : '1101 · Bank — CIB';
+  const vlist = jStored();
+  const seq = 420 + vlist.length;
+  vlist.push({
+    no: 'JV-2026-05-' + String(seq).padStart(4, '0'), date,
+    desc: `Bus fee received — ${s.name} (${receiptNo})`, src: 'Transport · auto',
+    lines: [ { acct, dr: amount, cr: 0 }, { acct: '4102 · Transport revenue', dr: 0, cr: amount } ]
+  });
+  localStorage.setItem('liberty_ledger_vouchers', JSON.stringify(vlist));
+
+  render();
+  payModal.hide();
+}
+function pushTo(key, obj) {
+  let a; try { a = JSON.parse(localStorage.getItem(key)) || []; } catch (_) { a = []; }
+  a.push(obj); localStorage.setItem(key, JSON.stringify(a));
+}
+function jStored() { try { return JSON.parse(localStorage.getItem('liberty_ledger_vouchers')) || []; } catch (_) { return []; } }
+
+document.addEventListener('DOMContentLoaded', () => {
+  payModal = new bootstrap.Modal('#payModal');
+  document.querySelectorAll('#payModal .dir-pill').forEach(p => p.addEventListener('click', () => setMethod(p.dataset.m)));
+  render();
+});
+</script>
+</body>
+</html>

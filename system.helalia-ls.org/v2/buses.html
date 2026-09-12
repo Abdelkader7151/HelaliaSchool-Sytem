@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Buses · HLS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="assets/css/app.css" rel="stylesheet">
+</head>
+<body data-page="buses" data-title="Buses" data-sub="الأتوبيسات — fleet, routes & riders">
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="content-wrap">
+    <div id="topbar-mount"></div>
+
+    <div class="page">
+
+      <div class="tabs-nav mb-4" id="books">
+        <a href="buses.html" class="active">Buses &amp; routes · الأتوبيسات</a>
+        <a href="bus-fees.html">Bus fees · رسوم الباص (Accounting)</a>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon amber"><i class="fa-solid fa-bus"></i></div><div class="kpi-label">Buses</div><div class="kpi-value" id="k-buses">0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon purple"><i class="fa-solid fa-users"></i></div><div class="kpi-label">Riders</div><div class="kpi-value" id="k-riders">0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon blue"><i class="fa-solid fa-chair"></i></div><div class="kpi-label">Seats free</div><div class="kpi-value" id="k-seats">0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon green"><i class="fa-solid fa-route"></i></div><div class="kpi-label">Routes</div><div class="kpi-value" id="k-routes">0</div></div></div>
+      </div>
+
+      <div class="page-head">
+        <div class="d-flex gap-2 align-items-center">
+          <span style="font-weight:600;">Fleet &amp; routes — الأسطول والخطوط</span>
+          <span class="pill info">Riders are pulled from each student's bus registration</span>
+        </div>
+        <button class="btn btn-primary" onclick="openAdd()"><i class="fa-solid fa-plus me-1"></i> Add bus</button>
+      </div>
+
+      <div id="fleet"></div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===== Add / Edit bus modal ===== -->
+<div class="modal fade" id="busModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div><div class="card-title" id="bus-mtitle">Add bus</div><div class="card-sub">بيانات الأتوبيس والخط</div></div>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="b-id">
+        <div class="form-sec">Bus — الأتوبيس</div>
+        <div class="row g-3">
+          <div class="col-md-4"><label class="form-label">Label *</label><input class="form-control" id="b-label" placeholder="e.g. Bus 4"></div>
+          <div class="col-md-4"><label class="form-label">Plate — اللوحة</label><input class="form-control" id="b-plate" placeholder="أ ب ج 0000"></div>
+          <div class="col-md-2"><label class="form-label">Capacity</label><input type="number" class="form-control mono" id="b-cap" min="1" value="28"></div>
+          <div class="col-md-2"><label class="form-label">Annual fee</label><input type="number" class="form-control mono" id="b-fee" min="0" value="6500"></div>
+        </div>
+        <div class="form-sec">Route — الخط / المسار</div>
+        <div class="row g-3">
+          <div class="col-12"><label class="form-label">Route name</label><input class="form-control" id="b-route" placeholder="e.g. Smouha · Sidi Gaber · Cleopatra"></div>
+          <div class="col-12"><label class="form-label">Stops <span class="muted">(comma separated)</span></label><input class="form-control" id="b-stops" placeholder="Smouha, Sidi Gaber, Cleopatra, School"></div>
+        </div>
+        <div class="form-sec">Crew — الطاقم</div>
+        <div class="row g-3">
+          <div class="col-md-4"><label class="form-label">Driver — السائق</label><input class="form-control" id="b-driver" placeholder="Driver name"></div>
+          <div class="col-md-4"><label class="form-label">Driver phone</label><input class="form-control" id="b-dphone" placeholder="01x xxxx xxxx"></div>
+          <div class="col-md-4"><label class="form-label">Supervisor — المشرف</label><input class="form-control" id="b-sup" placeholder="Supervisor name"></div>
+        </div>
+        <div class="text-danger small mt-3" id="b-err" style="display:none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light-2" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" onclick="saveBus()"><i class="fa-solid fa-check me-1"></i> Save bus</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Delete confirm ===== -->
+<div class="modal fade" id="delModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-body text-center p-4">
+        <div class="kpi-icon" style="background:var(--err-soft);color:var(--err);width:48px;height:48px;margin:0 auto 12px;font-size:19px;"><i class="fa-solid fa-trash"></i></div>
+        <div style="font-weight:700;margin-bottom:4px;">Delete bus?</div>
+        <div class="muted small mb-3" id="del-name"></div>
+        <div id="del-warn" class="note" style="display:none;background:var(--warn-soft);color:#92400e;border-radius:10px;padding:9px 12px;font-size:12px;margin-bottom:12px;"></div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-light-2 flex-fill" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn flex-fill" style="background:var(--err);color:#fff;" onclick="confirmDelete()">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Student details (read-only) ===== -->
+<div class="modal fade" id="stuModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="d-flex align-items-center gap-3">
+          <div class="av blue" id="stu-av" style="width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--info-soft);color:var(--info);"></div>
+          <div><div class="card-title" id="stu-name">Student</div><div class="card-sub" id="stu-sub"></div></div>
+        </div>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="stu-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-light-2" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/permissions.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+const COLORS = ['amber', 'blue', 'green', 'purple', 'pink'];
+let busModal, delModal, stuModal, delId = null;
+const ridersOf = id => LIBERTY.roster().filter(s => s.arrival === 'Bus' && s.busId === id);
+const busPay = () => { try { return JSON.parse(localStorage.getItem('liberty_buspay')) || []; } catch (_) { return []; } };
+const busPaidExtra = id => busPay().filter(p => p.studentId === id).reduce((a, p) => a + p.amount, 0);
+const famName = id => (LIBERTY.families.find(f => f.id === id) || {}).name || '—';
+
+function render() {
+  const buses = LIBERTY.buses ? STORE.buses() : [];
+  let totalRiders = 0, totalSeatsFree = 0;
+
+  document.getElementById('fleet').innerHTML = buses.map((b, bi) => {
+    const riders = ridersOf(b.id);
+    totalRiders += riders.length;
+    const free = Math.max(0, b.capacity - riders.length);
+    totalSeatsFree += free;
+    const pct = Math.min(100, Math.round(riders.length / b.capacity * 100));
+    const color = COLORS[bi % COLORS.length];
+
+    const riderRows = riders.length ? riders.map(s => {
+      const ff = LIBERTY.busFee(s); const paid = ff.paid + busPaidExtra(s.id); const bal = ff.fee - paid;
+      const st = bal <= 0 ? ['ok', 'Paid'] : paid > 0 ? ['warn', 'Partial'] : ['err', 'Due'];
+      const med = s.medical ? `<span class="pill err" title="${s.medical.replace(/"/g, '&quot;')}"><i class="fa-solid fa-notes-medical" style="font-size:9px"></i> Yes</span>` : '<span class="muted">—</span>';
+      return `
+      <tr>
+        <td><div class="row-avatar"><div class="av ${color}">${LIBERTY.initials(s.name)}</div>
+          <div><div class="nm">${s.name}</div><div class="meta mono">${s.id}</div></div></div></td>
+        <td>${s.stage} · ${s.grade}<div class="muted small">${s.section}</div></td>
+        <td>${s.guardian || '—'}</td>
+        <td>${med}</td>
+        <td>${(s.father && s.father.phone) || (s.mother && s.mother.phone) || '—'}</td>
+        <td><span class="pill ${st[0]}">${st[1]}</span></td>
+        <td class="text-end"><button class="btn-icon" title="Full details" onclick="openStudent('${s.id}')"><i class="fa-solid fa-eye"></i></button></td>
+      </tr>`; }).join('') : `<tr><td colspan="7" class="text-center muted" style="padding:18px">No students registered on this bus yet.</td></tr>`;
+
+    return `
+      <div class="table-wrap mb-3">
+        <div style="display:flex;align-items:center;gap:13px;padding:14px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap;">
+          <div class="kpi-icon ${color}" style="width:42px;height:42px;font-size:17px;"><i class="fa-solid fa-bus"></i></div>
+          <div style="min-width:180px;">
+            <div style="font-weight:700;">${b.label} <span class="muted small mono">· ${b.plate || ''}</span></div>
+            <div class="muted small"><i class="fa-solid fa-route me-1"></i>${b.route || '—'}</div>
+            <div class="mt-1" style="display:flex;gap:4px;flex-wrap:wrap;">${(b.stops || []).map(stp => `<span class="pill muted" style="font-size:9.5px;">${stp}</span>`).join('')}</div>
+          </div>
+          <div style="min-width:170px;">
+            <div class="muted small">Driver: <b style="color:var(--ink-2)">${b.driver || '—'}</b> · ${b.driverPhone || ''}</div>
+            <div class="muted small">Supervisor: <b style="color:var(--ink-2)">${b.supervisor || '—'}</b></div>
+          </div>
+          <div style="min-width:150px;">
+            <div class="d-flex justify-content-between small"><span class="muted">${riders.length}/${b.capacity} seats</span><span class="muted mono">${LIBERTY.money(b.fee)}/yr</span></div>
+            <div class="balbar" style="height:7px;background:var(--line-2);border-radius:5px;overflow:hidden;margin-top:5px;">
+              <div style="height:100%;width:${pct}%;background:${pct >= 90 ? 'var(--err)' : 'var(--ok)'};border-radius:5px;"></div></div>
+          </div>
+          <div class="ms-auto d-flex gap-1">
+            <button class="btn-icon" title="Edit" onclick="openEdit('${b.id}')"><i class="fa-solid fa-pen"></i></button>
+            <button class="btn-icon" title="Delete" onclick="askDelete('${b.id}')" style="color:var(--err);"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </div>
+        <table class="table mb-0 align-middle">
+          <thead><tr><th>Rider — الطالب</th><th>Class</th><th>Guardian</th><th>Medical</th><th>Contact</th><th>Bus fee</th><th></th></tr></thead>
+          <tbody>${riderRows}</tbody>
+        </table>
+      </div>`;
+  }).join('') || `<div class="table-wrap"><div class="text-center muted" style="padding:40px">No buses yet. Click "Add bus".</div></div>`;
+
+  document.getElementById('k-buses').textContent  = buses.length;
+  document.getElementById('k-riders').textContent = totalRiders;
+  document.getElementById('k-seats').textContent  = totalSeatsFree;
+  document.getElementById('k-routes').textContent = new Set(buses.map(b => b.route)).size;
+}
+
+function openAdd() {
+  document.getElementById('bus-mtitle').textContent = 'Add bus';
+  ['b-id', 'b-label', 'b-plate', 'b-route', 'b-stops', 'b-driver', 'b-dphone', 'b-sup'].forEach(i => document.getElementById(i).value = '');
+  document.getElementById('b-cap').value = 28;
+  document.getElementById('b-fee').value = 6500;
+  document.getElementById('b-err').style.display = 'none';
+  busModal.show();
+}
+function openEdit(id) {
+  const b = STORE.buses().find(x => x.id === id); if (!b) return;
+  document.getElementById('bus-mtitle').textContent = 'Edit bus';
+  document.getElementById('b-id').value = b.id;
+  document.getElementById('b-label').value = b.label || '';
+  document.getElementById('b-plate').value = b.plate || '';
+  document.getElementById('b-cap').value = b.capacity || 28;
+  document.getElementById('b-fee').value = b.fee || 0;
+  document.getElementById('b-route').value = b.route || '';
+  document.getElementById('b-stops').value = (b.stops || []).join(', ');
+  document.getElementById('b-driver').value = b.driver || '';
+  document.getElementById('b-dphone').value = b.driverPhone || '';
+  document.getElementById('b-sup').value = b.supervisor || '';
+  document.getElementById('b-err').style.display = 'none';
+  busModal.show();
+}
+function saveBus() {
+  const label = document.getElementById('b-label').value.trim();
+  const err = document.getElementById('b-err');
+  if (!label) { err.textContent = 'Bus label is required.'; err.style.display = 'block'; return; }
+  const stops = document.getElementById('b-stops').value.split(',').map(s => s.trim()).filter(Boolean);
+  STORE.saveBus({
+    id: document.getElementById('b-id').value || '',
+    label, plate: document.getElementById('b-plate').value.trim(),
+    capacity: parseInt(document.getElementById('b-cap').value) || 1,
+    fee: parseInt(document.getElementById('b-fee').value) || 0,
+    route: document.getElementById('b-route').value.trim(),
+    stops,
+    driver: document.getElementById('b-driver').value.trim(),
+    driverPhone: document.getElementById('b-dphone').value.trim(),
+    supervisor: document.getElementById('b-sup').value.trim()
+  });
+  busModal.hide();
+  render();
+}
+
+function askDelete(id) {
+  const b = STORE.buses().find(x => x.id === id); if (!b) return;
+  delId = id;
+  document.getElementById('del-name').textContent = b.label + ' · ' + (b.plate || b.id);
+  const n = ridersOf(id).length;
+  const warn = document.getElementById('del-warn');
+  if (n > 0) { warn.style.display = 'block'; warn.textContent = `${n} student(s) are registered on this bus — they will be left without a bus.`; }
+  else warn.style.display = 'none';
+  delModal.show();
+}
+function confirmDelete() {
+  if (delId) STORE.deleteBus(delId);
+  delId = null; delModal.hide(); render();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  busModal = new bootstrap.Modal('#busModal');
+  delModal = new bootstrap.Modal('#delModal');
+  stuModal = new bootstrap.Modal('#stuModal');
+  render();
+});
+
+// ---- read-only student profile ----
+function row(label, val) {
+  return `<div class="d-flex justify-content-between py-2" style="border-bottom:1px solid var(--line-2);"><span class="muted small">${label}</span><span style="font-weight:600;text-align:end;">${val || '—'}</span></div>`;
+}
+function openStudent(id) {
+  const s = STORE.studentById(id); if (!s) return;
+  const bus = s.busId ? LIBERTY.busById(s.busId) : null;
+  const ff = LIBERTY.busFee(s); const paid = ff.paid + busPaidExtra(s.id); const bal = ff.fee - paid;
+  document.getElementById('stu-name').textContent = s.name;
+  document.getElementById('stu-sub').textContent = `${s.id} · ${famName(s.familyId)} family`;
+  document.getElementById('stu-av').textContent = LIBERTY.initials(s.name);
+  document.getElementById('stu-body').innerHTML =
+    `<div class="form-sec">Student</div>` +
+    row('Class', `${s.stage} · ${s.grade} · ${s.section}`) +
+    row('Date of birth', s.dob) +
+    row('Address', s.address) +
+    row('Medical condition', s.medical ? `<span style="color:var(--err)">${s.medical}</span>` : 'None') +
+    `<div class="form-sec">Custody &amp; parents</div>` +
+    row('Responsible (الولاية التعليمية)', s.guardian) +
+    row('Father', `${(s.father && s.father.name) || '—'}<div class="muted small mono">${(s.father && s.father.phone) || ''}</div>`) +
+    row('Mother', `${(s.mother && s.mother.name) || '—'}<div class="muted small mono">${(s.mother && s.mother.phone) || ''}</div>`) +
+    `<div class="form-sec">Transport</div>` +
+    row('Bus', bus ? `${bus.label} · ${bus.plate || ''}` : 'Car') +
+    row('Route', bus ? bus.route : '—') +
+    row('Driver / supervisor', bus ? `${bus.driver || '—'} / ${bus.supervisor || '—'}` : '—') +
+    row('Bus fee', bus ? `${LIBERTY.money(ff.fee)} · paid ${LIBERTY.money(paid)} · <span style="color:${bal > 0 ? 'var(--err)' : 'var(--ok)'}">balance ${LIBERTY.money(bal)}</span>` : '—');
+  stuModal.show();
+}
+</script>
+</body>
+</html>

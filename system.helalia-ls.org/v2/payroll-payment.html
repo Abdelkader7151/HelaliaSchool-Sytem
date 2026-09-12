@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Payment · Payroll · HLS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="assets/css/app.css" rel="stylesheet">
+</head>
+<body data-page="acct-pay" data-title="Payroll · Payment" data-sub="Step 6 of 6 — Payment &amp; settlement (الدفع والتسوية)">
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="content-wrap">
+    <div id="topbar-mount"></div>
+
+    <div class="page">
+
+      <div class="role-banner">
+        <div class="rb-av">TD</div>
+        <div>
+          <div class="rb-role">Treasury / Payments</div>
+          <div class="rb-name">Treasury Desk</div>
+          <div class="rb-task">Disburse salaries, confirm payment, then close the month</div>
+        </div>
+        <div class="rb-actions">
+          <a href="payroll-approval.html" class="btn btn-light-2"><i class="fa-solid fa-diagram-project me-1"></i> Workflow</a>
+        </div>
+      </div>
+
+      <div id="stepper" class="mb-4"></div>
+
+      <div id="gate"></div>
+
+      <div class="pay-summary mb-4">
+        <div class="ps-cell"><div class="ps-label">Employees</div><div class="ps-value" id="s-count" style="color:var(--ink);"></div></div>
+        <div class="ps-cell"><div class="ps-label">Net payable</div><div class="ps-value" id="s-net" style="color:var(--ok);"></div></div>
+        <div class="ps-cell"><div class="ps-label">Bank</div><div class="ps-value" style="font-size:14px;color:var(--ink);">CIB</div></div>
+        <div class="ps-cell"><div class="ps-label">Method</div><div class="ps-value" style="font-size:14px;color:var(--ink);">Batch transfer</div></div>
+        <div class="ps-cell"><div class="ps-label">Status</div><div class="mt-2" id="s-status"></div></div>
+      </div>
+
+      <div class="row g-4" id="mainArea">
+        <!-- Left: payment confirmation -->
+        <div class="col-lg-7">
+          <div class="card">
+            <div class="card-head">
+              <div><div class="card-title"><i class="fa-solid fa-money-check-dollar me-2" style="color:var(--ok);"></i>Confirm payment</div>
+                <div class="card-sub">Record the bank disbursement for May 2026</div></div>
+            </div>
+            <div class="card-body" id="payBody"></div>
+          </div>
+        </div>
+
+        <!-- Right: bank file + month close -->
+        <div class="col-lg-5">
+          <div class="card mb-4">
+            <div class="card-head"><div class="card-title"><i class="fa-solid fa-building-columns me-2" style="color:var(--info);"></i>Bank transfer file</div></div>
+            <div class="card-body">
+              <div class="muted" style="font-size:12.5px;margin-bottom:14px;">The approved CSV used for this batch.</div>
+              <button class="btn btn-light-2 w-100" onclick="PAYROLL.downloadBank()"><i class="fa-solid fa-file-csv me-1"></i> Download bank file</button>
+            </div>
+          </div>
+          <div class="card" id="closeCard">
+            <div class="card-head"><div class="card-title"><i class="fa-solid fa-lock me-2" style="color:var(--ink-3);"></i>Close the month</div></div>
+            <div class="card-body" id="closeBody"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/payroll.js"></script>
+<script src="assets/js/permissions.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+function today() { return new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }); }
+function ref() { return 'CIB-' + new Date().getFullYear() + '-' + Math.floor(100000 + Math.random()*899999); }
+const REF = ref();
+
+function render() {
+  const t = PAYROLL.totals();
+  const s = PAYROLL.load();
+  document.getElementById('s-count').textContent = t.count;
+  document.getElementById('s-net').textContent   = LIBERTY.money(t.net);
+  PAYROLL.renderStepper('stepper', 6);
+
+  const statusPill = s.closed ? '<span class="pill ok">Closed</span>'
+                   : s.paid   ? '<span class="pill info">Paid</span>'
+                   : s.done >= 5 ? '<span class="pill purple">Ready to pay</span>'
+                   : '<span class="pill muted">Pending approval</span>';
+  document.getElementById('s-status').innerHTML = statusPill;
+
+  // gate
+  const gate = document.getElementById('gate');
+  if (s.done < 5) {
+    gate.innerHTML = `<div class="card mb-4" style="border-color:var(--warn);background:var(--warn-soft);">
+      <div class="card-body d-flex align-items-center gap-3">
+        <i class="fa-solid fa-clock" style="font-size:20px;color:var(--warn);"></i>
+        <div class="flex-grow-1"><div style="font-weight:600;">Waiting for Accounting approval</div>
+        <div class="muted" style="font-size:12.5px;">Payment can't start until Finance has approved the entry.</div></div>
+        <a href="payroll-finance.html" class="btn btn-light-2">Open Accounting</a>
+      </div></div>`;
+    document.getElementById('mainArea').style.opacity = '.5';
+    document.getElementById('mainArea').style.pointerEvents = 'none';
+  } else {
+    gate.innerHTML = '';
+    document.getElementById('mainArea').style.opacity = '';
+    document.getElementById('mainArea').style.pointerEvents = '';
+  }
+
+  // payment body
+  const payBody = document.getElementById('payBody');
+  if (s.paid) {
+    payBody.innerHTML = `
+      <div class="text-center py-3">
+        <div style="width:60px;height:60px;border-radius:50%;background:var(--ok-soft);color:var(--ok);display:grid;place-items:center;font-size:26px;margin:0 auto 14px;">
+          <i class="fa-solid fa-check"></i></div>
+        <div style="font-size:16px;font-weight:700;">Salaries paid</div>
+        <div class="muted" style="font-size:12.5px;">${t.count} employees · ${LIBERTY.money(t.net)}</div>
+      </div>
+      <div class="field-row"><div class="lbl">Method</div><div class="val">CIB batch transfer</div></div>
+      <div class="field-row"><div class="lbl">Reference</div><div class="val mono">${REF}</div></div>
+      <div class="field-row"><div class="lbl">Value date</div><div class="val">${today()}</div></div>
+      <div class="field-row"><div class="lbl">Total debited</div><div class="val mono fw-bold">${LIBERTY.money(t.net)}</div></div>`;
+  } else {
+    payBody.innerHTML = `
+      <div class="mb-3"><label class="form-label">Payment method</label>
+        <select class="form-select" id="method">
+          <option>CIB — batch bank transfer (تحويل بنكي)</option>
+          <option>Cash disbursement (صرف نقدي)</option>
+          <option>Manual / cheque</option>
+        </select></div>
+      <div class="row g-3 mb-3">
+        <div class="col-6"><label class="form-label">Value date</label><input class="form-control" value="${today()}"></div>
+        <div class="col-6"><label class="form-label">Bank reference</label><input class="form-control mono" value="${REF}"></div>
+      </div>
+      <div class="d-flex justify-content-between align-items-center p-3 mb-3" style="background:var(--line-2);border-radius:10px;">
+        <span class="muted">Total to debit</span>
+        <span class="mono fw-bold" style="font-size:18px;">${LIBERTY.money(t.net)}</span>
+      </div>
+      <div class="form-check mb-3"><input class="form-check-input" type="checkbox" id="confirmChk" onchange="document.getElementById('payBtn').disabled=!this.checked">
+        <label class="form-check-label" for="confirmChk" style="font-size:12.5px;">I confirm the bank file was uploaded and the batch executed.</label></div>
+      <button class="btn btn-primary btn-lg w-100" id="payBtn" disabled onclick="confirmPay()">
+        <i class="fa-solid fa-circle-check me-2"></i> Confirm salaries paid</button>`;
+  }
+
+  // close body
+  const closeBody = document.getElementById('closeBody');
+  if (s.closed) {
+    closeBody.innerHTML = `
+      <div class="text-center py-2">
+        <div style="width:48px;height:48px;border-radius:50%;background:var(--ok-soft);color:var(--ok);display:grid;place-items:center;font-size:20px;margin:0 auto 10px;">
+          <i class="fa-solid fa-lock"></i></div>
+        <div style="font-weight:700;">May 2026 is closed</div>
+        <div class="muted" style="font-size:12.5px;margin-bottom:12px;">The period is locked. No further changes allowed.</div>
+        <a href="payroll-approval.html" class="btn btn-soft w-100"><i class="fa-solid fa-diagram-project me-1"></i> Back to workflow</a>
+      </div>`;
+  } else if (s.paid) {
+    closeBody.innerHTML = `
+      <div class="muted" style="font-size:12.5px;margin-bottom:14px;">Closing locks May 2026 against edits and rolls the cycle to June.</div>
+      <button class="btn btn-primary w-100" onclick="closeMonth()"><i class="fa-solid fa-lock me-1"></i> Close May 2026</button>`;
+  } else {
+    closeBody.innerHTML = `<div class="muted" style="font-size:12.5px;">Available once salaries are paid.</div>`;
+  }
+}
+
+function confirmPay() {
+  const m = (document.getElementById('method') || {}).value || 'bank transfer';
+  PAYROLL.markPaid('Treasury confirmed salaries paid · ' + REF + ' · ' + m.split('(')[0].trim());
+  render();
+}
+function closeMonth() {
+  PAYROLL.closePeriod('May 2026 payroll closed &amp; period locked');
+  render();
+}
+
+document.addEventListener('DOMContentLoaded', render);
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+Helalia GPS check-in — STAGING only (not system.helalia-ls.org)
+
+This folder is the same employee home as http://192.168.1.2:8091/eng/emp-view.php
+
+UPLOAD
+1. Use your separate test cPanel, not the live school site.
+2. Put this folder so the tester URL is:
+     https://YOUR-STAGING-HOST/eng/emp-view.php
+   Document root = this folder (eng, arb, includes, api, assets).
+3. HTTPS is required. Location will not work on http:// except localhost.
+4. Staff login still needs Connections/database.php two folders above
+   includes/staff.php (same as the local app). Point that file at the
+   STAGING database, not production.
+5. Optional: run sql/attendance-app-local.sql on the staging database.
+
+TEST
+- Log in as an employee (account_type = 2).
+- Home shows the gold Check in button above School tools.
+- Open Check in → tap Enable location → Allow.
+- Inside the school fence, Check in saves to attendance_log on staging.
+- Chrome fake GPS: Sensors → Other 31.1774369, 29.9892744
+  Staging currently allows ±150 m GPS (test_relax_accuracy).
+  Set test_relax_accuracy to false in includes/attendance-config.php
+  before production go-live.

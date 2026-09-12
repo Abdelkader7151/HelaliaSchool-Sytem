@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Maintenance · HLS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="assets/css/app.css" rel="stylesheet">
+</head>
+<body data-page="inv-maint" data-title="Maintenance requests" data-sub="طلبات الصيانة — asset maintenance">
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="content-wrap">
+    <div id="topbar-mount"></div>
+
+    <div class="page">
+
+      <div class="tabs-nav mb-4" id="books">
+        <a href="inventory-supplies.html">Supplies · المستلزمات</a>
+        <a href="inventory-equipment.html">Equipment · الأصول</a>
+        <a href="inventory-maintenance.html" class="active">Maintenance · الصيانة</a>
+        <a href="inventory-issues.html">Stock issues · صرف المخزون</a>
+        <a href="inventory-receipts.html">Goods receipts · استلام المخزون</a>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon blue"><i class="fa-solid fa-screwdriver-wrench"></i></div><div class="kpi-label">Total requests</div><div class="kpi-value" id="k-total">0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon" style="background:var(--err-soft);color:var(--err)"><i class="fa-solid fa-folder-open"></i></div><div class="kpi-label">Open</div><div class="kpi-value" id="k-open">0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon amber"><i class="fa-solid fa-spinner"></i></div><div class="kpi-label">In progress</div><div class="kpi-value" id="k-prog">0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon" style="background:var(--err-soft);color:var(--err)"><i class="fa-solid fa-fire"></i></div><div class="kpi-label">Critical open</div><div class="kpi-value" id="k-crit">0</div></div></div>
+      </div>
+
+      <div class="page-head">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+          <input type="search" class="form-control" id="search" placeholder="Search asset, issue…" style="max-width:230px;" oninput="render()">
+          <select class="form-select" id="f-prio" style="max-width:150px;" onchange="render()"><option value="">All priority</option></select>
+          <select class="form-select" id="f-status" style="max-width:160px;" onchange="render()"><option value="">All status</option></select>
+        </div>
+        <button class="btn btn-primary" data-perm="edit" onclick="openAdd()"><i class="fa-solid fa-plus me-1"></i> New request</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table mb-0 align-middle">
+          <thead>
+            <tr>
+              <th>Asset</th><th>Issue description</th><th>Requested by</th><th>Request date</th>
+              <th>Priority</th><th>Status</th><th>Resolved date</th><th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="muted small mt-2" id="count-line"></div>
+
+      <div class="note-row mt-3" style="display:flex;gap:9px;align-items:flex-start;background:var(--primary-soft);border-radius:12px;padding:11px 14px;font-size:12.5px;color:var(--ink-2);">
+        <i class="fa-solid fa-arrows-rotate" style="color:var(--primary);margin-top:2px;"></i>
+        <span>Opening a request automatically sets the asset to <b>Under maintenance</b> in Equipment. Once no open/in-progress requests remain, it returns to <b>In service</b>.</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===== New request modal ===== -->
+<div class="modal fade" id="mntModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div><div class="card-title">New maintenance request — طلب صيانة</div><div class="card-sub">Report a fault on an asset</div></div>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="f-id">
+        <div class="row g-3">
+          <div class="col-md-7"><label class="form-label">Asset *</label><select class="form-select" id="f-asset"></select></div>
+          <div class="col-md-5"><label class="form-label">Priority</label><select class="form-select" id="f-prio2"></select></div>
+          <div class="col-12"><label class="form-label">Issue description *</label><textarea class="form-control" id="f-issue" rows="3" placeholder="Describe the fault…"></textarea></div>
+          <div class="col-md-6"><label class="form-label">Requested by</label><input class="form-control" id="f-by" readonly></div>
+          <div class="col-md-6"><label class="form-label">Request date</label><input type="date" class="form-control" id="f-date"></div>
+          <div class="col-12"><label class="form-label">Notes</label><input class="form-control" id="f-notes" placeholder="Optional"></div>
+        </div>
+        <div class="text-danger small mt-2" id="f-err" style="display:none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light-2" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" onclick="saveRequest()"><i class="fa-solid fa-check me-1"></i> Submit request</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Update status modal ===== -->
+<div class="modal fade" id="statModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div><div class="card-title">Update status</div><div class="card-sub" id="st-asset"></div></div>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="st-id">
+        <div class="mb-3"><label class="form-label">Status</label><select class="form-select" id="st-status" onchange="onStatusChange()"></select></div>
+        <div class="mb-3" id="st-resolved-wrap" style="display:none;"><label class="form-label">Resolved date</label><input type="date" class="form-control" id="st-resolved"></div>
+        <div class="mb-1"><label class="form-label">Resolution notes</label><textarea class="form-control" id="st-notes" rows="2"></textarea></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light-2" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" onclick="saveStatus()"><i class="fa-solid fa-check me-1"></i> Update</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/permissions.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+let mntModal, statModal;
+const TODAY = '2026-06-24';
+const assetName = id => { const e = LIBERTY.equipById(id); return e ? e.name : id; };
+const assetSerial = id => { const e = LIBERTY.equipById(id); return e ? e.serial : ''; };
+
+function render() {
+  const all = STORE.maintenance();
+  const q = (document.getElementById('search').value || '').toLowerCase();
+  const fp = document.getElementById('f-prio').value, fs = document.getElementById('f-status').value;
+  const rows = all.filter(m => {
+    if (fp && m.priority !== fp) return false;
+    if (fs && m.status !== fs) return false;
+    if (q && !(`${assetName(m.assetId)} ${m.issue} ${m.requestedBy}`.toLowerCase().includes(q))) return false;
+    return true;
+  });
+  document.getElementById('tbody').innerHTML = rows.map(m => `
+      <tr>
+        <td><div style="font-weight:700;">${assetName(m.assetId)}</div><div class="muted small mono">${assetSerial(m.assetId) || m.assetId}</div></td>
+        <td class="small" style="max-width:280px;">${m.issue}${m.notes ? `<div class="muted small mt-1"><i class="fa-solid fa-note-sticky" style="font-size:9px"></i> ${m.notes}</div>` : ''}</td>
+        <td class="small">${m.requestedBy}</td>
+        <td class="mono small">${m.requestDate}</td>
+        <td><span class="pill ${LIBERTY.PRIORITY[m.priority]?.pill || 'muted'}">${m.priority}</span></td>
+        <td><span class="pill ${LIBERTY.MNT_STATUS[m.status] || 'muted'}">${m.status}</span></td>
+        <td class="mono small">${m.resolvedDate || '—'}</td>
+        <td class="text-end">
+          <button class="btn-icon" title="Update status" data-perm="edit" onclick="openStatus('${m.id}')"><i class="fa-solid fa-arrows-rotate"></i></button>
+        </td>
+      </tr>`).join('') || `<tr><td colspan="8" class="text-center muted" style="padding:30px">No requests match.</td></tr>`;
+  document.getElementById('count-line').textContent = `${rows.length} of ${all.length} requests`;
+  document.getElementById('k-total').textContent = all.length;
+  document.getElementById('k-open').textContent = all.filter(m => m.status === 'Open').length;
+  document.getElementById('k-prog').textContent = all.filter(m => m.status === 'In progress').length;
+  document.getElementById('k-crit').textContent = all.filter(m => m.priority === 'Critical' && m.status !== 'Resolved' && m.status !== 'Cancelled').length;
+}
+
+function fillSelects() {
+  const p = LIBERTY.priorities.map(x => `<option>${x}</option>`).join('');
+  document.getElementById('f-prio2').innerHTML = p;
+  document.getElementById('f-prio').innerHTML = '<option value="">All priority</option>' + p;
+  document.getElementById('f-prio2').value = 'Medium';
+  const s = LIBERTY.maintStatuses.map(x => `<option>${x}</option>`).join('');
+  document.getElementById('f-status').innerHTML = '<option value="">All status</option>' + s;
+  document.getElementById('st-status').innerHTML = s;
+  document.getElementById('f-asset').innerHTML = STORE.equipment().map(e => `<option value="${e.id}">${e.name} — ${e.serial || e.id}</option>`).join('');
+}
+function openAdd() {
+  document.getElementById('f-id').value = '';
+  document.getElementById('f-issue').value = ''; document.getElementById('f-notes').value = '';
+  document.getElementById('f-prio2').value = 'Medium'; document.getElementById('f-date').value = TODAY;
+  document.getElementById('f-by').value = (window.LIBERTY.currentUser ? LIBERTY.currentUser().name : 'Current user');
+  document.getElementById('f-err').style.display = 'none'; mntModal.show();
+}
+function saveRequest() {
+  const issue = document.getElementById('f-issue').value.trim();
+  const err = document.getElementById('f-err');
+  if (!issue) { err.textContent = 'Issue description is required.'; err.style.display = 'block'; return; }
+  const assetId = document.getElementById('f-asset').value;
+  STORE.saveMaintenance({
+    id: '', assetId, issue,
+    requestedBy: document.getElementById('f-by').value, requestDate: document.getElementById('f-date').value,
+    priority: document.getElementById('f-prio2').value, status: 'Open', resolvedDate: '',
+    notes: document.getElementById('f-notes').value.trim()
+  });
+  // Auto: opening a request flags the asset as under maintenance
+  syncAssetStatus(assetId);
+  mntModal.hide(); render();
+}
+
+function onStatusChange() {
+  const resolved = document.getElementById('st-status').value === 'Resolved';
+  document.getElementById('st-resolved-wrap').style.display = resolved ? '' : 'none';
+  if (resolved && !document.getElementById('st-resolved').value) document.getElementById('st-resolved').value = TODAY;
+}
+function openStatus(id) {
+  const m = STORE.maintenance().find(x => x.id === id); if (!m) return;
+  document.getElementById('st-id').value = id;
+  document.getElementById('st-asset').textContent = assetName(m.assetId) + ' · ' + m.priority + ' priority';
+  document.getElementById('st-status').value = m.status;
+  document.getElementById('st-resolved').value = m.resolvedDate || '';
+  document.getElementById('st-notes').value = m.notes || '';
+  onStatusChange(); statModal.show();
+}
+function saveStatus() {
+  const id = document.getElementById('st-id').value;
+  const status = document.getElementById('st-status').value;
+  const m0 = STORE.maintenance().find(x => x.id === id);
+  STORE.saveMaintenance({
+    id, status,
+    resolvedDate: status === 'Resolved' ? (document.getElementById('st-resolved').value || TODAY) : '',
+    notes: document.getElementById('st-notes').value.trim()
+  });
+  if (m0) syncAssetStatus(m0.assetId);
+  statModal.hide(); render();
+}
+
+// Keep the equipment status in sync with its open maintenance requests.
+// Any Open / In progress request => asset 'Under maintenance'.
+// None left open => asset back to 'In service' (only if it was under maintenance).
+function syncAssetStatus(assetId) {
+  const eq = STORE.equipment().find(e => e.id === assetId);
+  if (!eq) return;
+  const hasOpen = STORE.maintenance().some(m => m.assetId === assetId && (m.status === 'Open' || m.status === 'In progress'));
+  let next = eq.status;
+  if (hasOpen) next = 'Under maintenance';
+  else if (eq.status === 'Under maintenance') next = 'In service';
+  if (next !== eq.status) STORE.saveEquipment({ ...eq, status: next });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    if (!document.getElementById('tbody')) return;
+    mntModal = new bootstrap.Modal('#mntModal'); statModal = new bootstrap.Modal('#statModal');
+    fillSelects(); render();
+  }, 0);
+});
+</script>
+</body>
+</html>

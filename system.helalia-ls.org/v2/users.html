@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Users · HLS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="assets/css/app.css" rel="stylesheet">
+</head>
+<body data-page="users" data-title="Users &amp; roles" data-sub="Manage system access">
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="content-wrap">
+    <div id="topbar-mount"></div>
+
+    <div class="page">
+
+      <div class="page-head">
+        <div class="tabs-nav">
+          <a class="active" href="#">All <span class="count">6</span></a>
+          <a href="#">Admins <span class="count">1</span></a>
+          <a href="#">HR <span class="count">1</span></a>
+          <a href="#">Managers <span class="count">2</span></a>
+          <a href="#">Employees <span class="count">2</span></a>
+        </div>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal"><i class="fa-solid fa-plus me-1"></i> Add user</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table mb-0 align-middle">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Linked employee</th>
+              <th>Status</th>
+              <th class="num"></th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Add user modal -->
+<div class="modal fade" id="userModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Add user</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <form>
+          <div class="mb-3"><label class="form-label">Full name *</label><input class="form-control"></div>
+          <div class="mb-3"><label class="form-label">Username *</label><input class="form-control mono" placeholder="lowercase, no spaces"></div>
+          <div class="mb-3"><label class="form-label">Email *</label><input type="email" class="form-control"></div>
+          <div class="mb-3"><label class="form-label">Role *</label>
+            <select class="form-select">
+              <option value="admin">Admin — full access</option>
+              <option value="hr">HR — manage staff &amp; payroll</option>
+              <option value="manager">Manager — approve leaves for team</option>
+              <option value="employee">Employee — view own data only</option>
+            </select>
+          </div>
+          <div class="mb-3"><label class="form-label">Link to employee record</label>
+            <select class="form-select" id="link-emp"><option value="">(optional)</option></select>
+          </div>
+          <div class="mb-3"><label class="form-label">Temporary password *</label><input type="text" class="form-control mono" value="changeme2026"></div>
+          <div class="form-check"><input type="checkbox" class="form-check-input" id="forcechange" checked><label class="form-check-label small" for="forcechange">Require password change on first login</label></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light-2" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" data-bs-dismiss="modal">Create user</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/permissions.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+const rolePill = { admin:'purple', hr:'info', manager:'warn', employee:'muted' };
+const roleLabel = { admin:'Admin', hr:'HR', manager:'Manager', employee:'Employee' };
+
+document.addEventListener('DOMContentLoaded', () => {
+  const tbody = document.getElementById('users-tbody');
+  tbody.innerHTML = LIBERTY.users.map(u => `
+    <tr ${u.active ? '' : 'style="opacity:0.5;"'}>
+      <td>
+        <div class="row-avatar">
+          <div class="av purple">${LIBERTY.initials(u.name)}</div>
+          <div><div class="nm">${u.name}</div></div>
+        </div>
+      </td>
+      <td class="mono small">${u.username}</td>
+      <td class="muted small">${u.email}</td>
+      <td><span class="pill ${rolePill[u.role]}">${roleLabel[u.role]}</span></td>
+      <td class="small">${u.linked}</td>
+      <td>${u.active ? '<span class="pill ok">Active</span>' : '<span class="pill muted">Disabled</span>'}</td>
+      <td class="num">
+        <button class="btn btn-icon btn-light-2" title="Edit"><i class="fa-regular fa-pen-to-square"></i></button>
+        <button class="btn btn-icon btn-light-2" title="Reset password"><i class="fa-solid fa-key"></i></button>
+        <button class="btn btn-icon btn-light-2 text-danger" title="Disable"><i class="fa-solid fa-user-slash"></i></button>
+      </td>
+    </tr>
+  `).join('');
+
+  const sel = document.getElementById('link-emp');
+  LIBERTY.employees.forEach(e => sel.insertAdjacentHTML('beforeend', `<option>${e.name}</option>`));
+});
+</script>
+</body>
+</html>

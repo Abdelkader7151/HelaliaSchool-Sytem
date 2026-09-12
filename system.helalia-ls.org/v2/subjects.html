@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Subjects · HLS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="assets/css/app.css" rel="stylesheet">
+<style>
+  .teacher-chip { display:inline-flex; align-items:center; gap:6px; background:var(--line-2); border-radius:999px; padding:3px 10px 3px 4px; font-size:11.5px; font-weight:600; margin:2px 4px 2px 0; }
+  .teacher-chip .av-mini { width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:9px;font-weight:700; }
+  .teacher-pick-row { display:flex; align-items:center; gap:9px; padding:7px 10px; border-radius:9px; cursor:pointer; }
+  .teacher-pick-row:hover { background:var(--line-2); }
+  .teacher-pick-row input { accent-color:var(--primary); width:16px; height:16px; }
+  th.sortable { cursor:pointer; user-select:none; }
+  th.sortable i { font-size:10px; color:var(--ink-4); margin-inline-start:4px; }
+  th.sortable.active i { color:var(--primary); }
+</style>
+</head>
+<body data-page="subjects" data-title="Subjects" data-sub="المواد الدراسية — assign by stage &amp; teachers">
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="content-wrap">
+    <div id="topbar-mount"></div>
+
+    <div class="page">
+
+      <div class="tabs-nav mb-4" id="books">
+        <a href="students.html">Students · الطلبة</a>
+        <a href="classes.html">Classes · الفصول</a>
+        <a href="subjects.html" class="active">Subjects · المواد</a>
+        <a href="second-language.html">Second language · اللغة الثانية</a>
+        <a href="student-vacations.html">Vacations · الإجازات</a>
+        <a href="student-reports.html">Reports · التقارير</a>
+        <a href="student-search.html">Search · بحث</a>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon purple"><i class="fa-solid fa-book-open"></i></div><div class="kpi-label">Subjects</div><div class="kpi-value" id="k-subjects">0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon blue"><i class="fa-solid fa-chalkboard-user"></i></div><div class="kpi-label">Teacher assignments</div><div class="kpi-value" id="k-assign">0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon amber"><i class="fa-solid fa-triangle-exclamation"></i></div><div class="kpi-label">No teacher assigned</div><div class="kpi-value" id="k-noteach">0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon green"><i class="fa-solid fa-graduation-cap"></i></div><div class="kpi-label">Stages covered</div><div class="kpi-value" id="k-stages">0</div></div></div>
+      </div>
+
+      <div class="page-head">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+          <input type="search" class="form-control" id="search" placeholder="Search subject…" style="max-width:200px;" oninput="render()">
+          <select class="form-select" id="f-stage" style="max-width:140px;" onchange="render()"><option value="">All stages</option><option>KG</option><option>Primary</option><option>Prep</option><option>Secondary</option></select>
+          <select class="form-select" id="f-coord" style="max-width:170px;" onchange="render()"><option value="">All coordinators</option></select>
+          <select class="form-select" id="f-super" style="max-width:170px;" onchange="render()"><option value="">All supervisors</option></select>
+          <select class="form-select" id="f-teacher" style="max-width:170px;" onchange="render()"><option value="">All teachers</option></select>
+          <select class="form-select" id="f-ministry" style="max-width:150px;" onchange="render()"><option value="">Ministry: any</option><option value="1">Ministry: yes</option><option value="0">Ministry: no</option></select>
+          <select class="form-select" id="f-hls" style="max-width:140px;" onchange="render()"><option value="">HLS: any</option><option value="1">HLS: yes</option><option value="0">HLS: no</option></select>
+          <button class="btn btn-light-2 btn-sm" onclick="resetFilters()"><i class="fa-solid fa-rotate-left me-1"></i> Reset</button>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-light-2" onclick="exportXlsx()"><i class="fa-solid fa-file-excel me-1"></i> Export to Excel</button>
+          <button class="btn btn-primary" data-perm="edit" onclick="openAdd()"><i class="fa-solid fa-plus me-1"></i> Add subject</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table mb-0 align-middle">
+          <thead>
+            <tr>
+              <th class="sortable" onclick="setSort('name')">Subject <i class="fa-solid fa-sort" id="sort-name"></i></th>
+              <th class="sortable" onclick="setSort('stage')">Stage <i class="fa-solid fa-sort" id="sort-stage"></i></th>
+              <th>Teachers responsible</th>
+              <th class="sortable" onclick="setSort('coordinator')">Coordinator <i class="fa-solid fa-sort" id="sort-coordinator"></i></th>
+              <th class="sortable" onclick="setSort('supervisor')">Supervisor <i class="fa-solid fa-sort" id="sort-supervisor"></i></th>
+              <th class="num sortable" onclick="setSort('totalDegree')">Total <i class="fa-solid fa-sort" id="sort-totalDegree"></i></th>
+              <th class="num">CW1</th><th class="num">CW2</th>
+              <th>Counted in</th><th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="muted small mt-2" id="count-line"></div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===== Add / Edit subject modal ===== -->
+<div class="modal fade" id="subModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div><div class="card-title" id="sb-mtitle">Add subject</div><div class="card-sub">بيانات المادة والمعلمين المسؤولين</div></div>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="s-id">
+        <div class="row g-3">
+          <div class="col-md-6"><label class="form-label">Subject name (English) *</label><input class="form-control" id="s-name" placeholder="e.g. Mathematics"></div>
+          <div class="col-md-6"><label class="form-label">اسم المادة بالعربي</label><input class="form-control" dir="rtl" id="s-nameAr" placeholder="مثال: الرياضيات"></div>
+          <div class="col-md-6"><label class="form-label">Stage</label><select class="form-select" id="s-stage"><option>KG</option><option>Primary</option><option>Prep</option><option>Secondary</option></select></div>
+        </div>
+        <div class="form-sec">Teachers responsible — المعلمون المسؤولون <span class="muted" style="text-transform:none;font-weight:400;">(select one or more)</span></div>
+        <div id="s-teachers" style="max-height:220px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;padding:6px;"></div>
+
+        <div class="form-sec">Parent contact — مسؤول الرد على استفسارات ولي الأمر</div>
+        <div class="row g-3">
+          <div class="col-md-6"><label class="form-label">Coordinator <span class="muted small">(responds to parent questions)</span></label><div id="s-coord-wrap"></div></div>
+          <div class="col-md-6"><label class="form-label">Supervisor</label><div id="s-super-wrap"></div></div>
+        </div>
+
+        <div class="form-sec">Grade calculation — التقييم في المجموع</div>
+        <div class="d-flex gap-4 mb-3">
+          <label class="teacher-pick-row" style="padding:9px 12px;background:var(--line-2);border-radius:9px;"><input type="checkbox" id="s-ministry"> Counted in Ministry total — مجموع الوزارة</label>
+          <label class="teacher-pick-row" style="padding:9px 12px;background:var(--line-2);border-radius:9px;"><input type="checkbox" id="s-hls"> Counted in HLS total — مجموع المدرسة</label>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-4"><label class="form-label">Subject total degree</label><input type="number" class="form-control mono" id="s-total" min="0" placeholder="100"></div>
+          <div class="col-md-4"><label class="form-label">Coursework — 1st term total</label><input type="number" class="form-control mono" id="s-cw1" min="0" placeholder="e.g. 20"></div>
+          <div class="col-md-4"><label class="form-label">Coursework — 2nd term total</label><input type="number" class="form-control mono" id="s-cw2" min="0" placeholder="e.g. 20"></div>
+        </div>
+        <div class="text-danger small mt-2" id="s-err" style="display:none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light-2" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" onclick="saveSubject()"><i class="fa-solid fa-check me-1"></i> Save subject</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Delete confirm ===== -->
+<div class="modal fade" id="delModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-body text-center p-4">
+        <div class="kpi-icon" style="background:var(--err-soft);color:var(--err);width:48px;height:48px;margin:0 auto 12px;font-size:19px;"><i class="fa-solid fa-trash"></i></div>
+        <div style="font-weight:700;margin-bottom:4px;">Delete subject?</div>
+        <div class="muted small mb-3" id="del-name"></div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-light-2 flex-fill" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn flex-fill" style="background:var(--err);color:#fff;" onclick="confirmDelete()">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="assets/js/autocomplete.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/permissions.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+const stageColor = { KG: 'pink', Primary: 'blue', Prep: 'amber', Secondary: 'purple' };
+const empColor = ['blue', 'green', 'amber', 'purple', 'pink'];
+let subModal, delModal, delId = null;
+let sortKey = 'name', sortDir = 1;
+let lastRows = [];
+const empByName = n => LIBERTY.employees.find(e => e.name === n);
+
+function setSort(key) {
+  if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = 1; }
+  render();
+}
+function resetFilters() {
+  ['search'].forEach(id => document.getElementById(id).value = '');
+  ['f-stage', 'f-coord', 'f-super', 'f-teacher', 'f-ministry', 'f-hls'].forEach(id => document.getElementById(id).value = '');
+  render();
+}
+function fillFilterSelects(subs) {
+  const coordSel = document.getElementById('f-coord'), curCoord = coordSel.value;
+  const superSel = document.getElementById('f-super'), curSuper = superSel.value;
+  const teachSel = document.getElementById('f-teacher'), curTeach = teachSel.value;
+  const coords = [...new Set(subs.map(s => s.coordinator).filter(Boolean))].sort();
+  const supers = [...new Set(subs.map(s => s.supervisor).filter(Boolean))].sort();
+  const teachers = [...new Set(subs.flatMap(s => s.teachers || []))].sort();
+  coordSel.innerHTML = '<option value="">All coordinators</option>' + coords.map(c => `<option value="${c}">${c}</option>`).join('');
+  superSel.innerHTML = '<option value="">All supervisors</option>' + supers.map(c => `<option value="${c}">${c}</option>`).join('');
+  teachSel.innerHTML = '<option value="">All teachers</option>' + teachers.map(c => `<option value="${c}">${c}</option>`).join('');
+  coordSel.value = curCoord; superSel.value = curSuper; teachSel.value = curTeach;
+}
+
+function render() {
+  const subs = STORE.subjects();
+  fillFilterSelects(subs);
+  const q = (document.getElementById('search').value || '').toLowerCase();
+  const fs = document.getElementById('f-stage').value;
+  const fc = document.getElementById('f-coord').value;
+  const fsup = document.getElementById('f-super').value;
+  const ft = document.getElementById('f-teacher').value;
+  const fm = document.getElementById('f-ministry').value;
+  const fh = document.getElementById('f-hls').value;
+  let rows = subs.filter(s =>
+    (!fs || s.stage === fs) &&
+    (!q || s.name.toLowerCase().includes(q) || (s.nameAr || '').includes(q)) &&
+    (!fc || s.coordinator === fc) &&
+    (!fsup || s.supervisor === fsup) &&
+    (!ft || (s.teachers || []).includes(ft)) &&
+    (fm === '' || !!s.ministryTotal === (fm === '1')) &&
+    (fh === '' || !!s.hlsTotal === (fh === '1'))
+  );
+  rows.sort((a, b) => {
+    const av = a[sortKey], bv = b[sortKey];
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1; if (bv == null) return -1;
+    if (typeof av === 'number') return (av - bv) * sortDir;
+    return String(av).localeCompare(String(bv)) * sortDir;
+  });
+  document.querySelectorAll('th.sortable').forEach(th => th.classList.remove('active'));
+  document.querySelectorAll('th.sortable i').forEach(i => { i.className = 'fa-solid fa-sort'; });
+  const activeTh = document.getElementById('sort-' + sortKey);
+  if (activeTh) { activeTh.parentElement.classList.add('active'); activeTh.className = 'fa-solid fa-sort-' + (sortDir === 1 ? 'up' : 'down'); }
+  lastRows = rows;
+
+  document.getElementById('tbody').innerHTML = rows.map(s => {
+    const teachers = (s.teachers || []).map(t => {
+      const e = empByName(t);
+      const c = e ? empColor[e.id % empColor.length] : 'blue';
+      return `<span class="teacher-chip"><span class="av-mini" style="background:var(--primary-soft);color:var(--primary);">${LIBERTY.initials(t)}</span>${t}</span>`;
+    }).join('') || '<span class="pill err">No teacher assigned</span>';
+    const counted = `${s.ministryTotal ? '<span class="pill info">Ministry</span>' : ''} ${s.hlsTotal ? '<span class="pill ok">HLS</span>' : ''}`.trim() || '<span class="muted">—</span>';
+    return `
+      <tr>
+        <td><div class="nm">${s.name}</div><div class="meta" dir="rtl">${s.nameAr || ''}</div></td>
+        <td><span class="pill ${stageColor[s.stage] || 'muted'}">${s.stage}</span></td>
+        <td>${teachers}</td>
+        <td class="small">${s.coordinator || '<span class="muted">—</span>'}</td>
+        <td class="small">${s.supervisor || '<span class="muted">—</span>'}</td>
+        <td class="num mono">${s.totalDegree ?? '—'}</td>
+        <td class="num mono">${s.cw1 ?? '—'}</td>
+        <td class="num mono">${s.cw2 ?? '—'}</td>
+        <td>${counted}</td>
+        <td class="text-end">
+          <button class="btn-icon" title="Edit" data-perm="edit" onclick="openEdit('${s.id}')"><i class="fa-solid fa-pen"></i></button>
+          <button class="btn-icon" title="Delete" data-perm="delete" onclick="askDelete('${s.id}')" style="color:var(--err);"><i class="fa-solid fa-trash"></i></button>
+        </td>
+      </tr>`;
+  }).join('') || `<tr><td colspan="10" class="text-center muted" style="padding:30px">No subjects match.</td></tr>`;
+
+  document.getElementById('count-line').textContent = `${rows.length} of ${subs.length} subjects`;
+  document.getElementById('k-subjects').textContent = subs.length;
+  document.getElementById('k-assign').textContent = subs.reduce((a, s) => a + (s.teachers || []).length, 0);
+  document.getElementById('k-noteach').textContent = subs.filter(s => !(s.teachers || []).length).length;
+  document.getElementById('k-stages').textContent = new Set(subs.map(s => s.stage)).size;
+}
+
+function renderTeacherPicker(selected) {
+  const sel = new Set(selected || []);
+  document.getElementById('s-teachers').innerHTML = LIBERTY.employees.map(e => {
+    const c = empColor[e.id % empColor.length];
+    return `
+      <label class="teacher-pick-row">
+        <input type="checkbox" value="${e.name}" ${sel.has(e.name) ? 'checked' : ''}>
+        <span class="av-mini" style="width:24px;height:24px;font-size:10px;background:var(--primary-soft);color:var(--primary);">${LIBERTY.initials(e.name)}</span>
+        <span>${e.name} <span class="muted small">— ${e.role}</span></span>
+      </label>`;
+  }).join('');
+}
+
+let coordAc, superAc;
+function fillEmployeeSelects() {
+  const items = () => LIBERTY.employees.map(e => ({ id: e.name, label: e.name, sub: e.role }));
+  if (!coordAc) {
+    LIBERTY.autocompleteField(document.getElementById('s-coord-wrap'), 's-coord', 'Type an employee name…');
+    coordAc = LIBERTY.autocomplete({ inputId: 's-coord-search', hiddenId: 's-coord', boxId: 's-coord-ac', items });
+  }
+  if (!superAc) {
+    LIBERTY.autocompleteField(document.getElementById('s-super-wrap'), 's-super', 'Type an employee name…');
+    superAc = LIBERTY.autocomplete({ inputId: 's-super-search', hiddenId: 's-super', boxId: 's-super-ac', items });
+  }
+}
+function openAdd() {
+  document.getElementById('sb-mtitle').textContent = 'Add subject';
+  ['s-id', 's-name', 's-nameAr'].forEach(i => document.getElementById(i).value = '');
+  document.getElementById('s-stage').value = 'Primary';
+  document.getElementById('s-err').style.display = 'none';
+  fillEmployeeSelects();
+  coordAc.setValue('');
+  superAc.setValue('');
+  document.getElementById('s-ministry').checked = true;
+  document.getElementById('s-hls').checked = true;
+  document.getElementById('s-total').value = '';
+  document.getElementById('s-cw1').value = '';
+  document.getElementById('s-cw2').value = '';
+  renderTeacherPicker([]);
+  subModal.show();
+}
+function openEdit(id) {
+  const s = STORE.subjectById(id); if (!s) return;
+  document.getElementById('sb-mtitle').textContent = 'Edit subject';
+  document.getElementById('s-id').value = s.id;
+  document.getElementById('s-name').value = s.name;
+  document.getElementById('s-nameAr').value = s.nameAr || '';
+  document.getElementById('s-stage').value = s.stage;
+  document.getElementById('s-err').style.display = 'none';
+  fillEmployeeSelects();
+  coordAc.setValue(s.coordinator || '');
+  superAc.setValue(s.supervisor || '');
+  document.getElementById('s-ministry').checked = !!s.ministryTotal;
+  document.getElementById('s-hls').checked = !!s.hlsTotal;
+  document.getElementById('s-total').value = s.totalDegree ?? '';
+  document.getElementById('s-cw1').value = s.cw1 ?? '';
+  document.getElementById('s-cw2').value = s.cw2 ?? '';
+  renderTeacherPicker(s.teachers || []);
+  subModal.show();
+}
+function saveSubject() {
+  const name = document.getElementById('s-name').value.trim();
+  const err = document.getElementById('s-err');
+  if (!name) { err.textContent = 'Subject name is required.'; err.style.display = 'block'; return; }
+  const teachers = [...document.querySelectorAll('#s-teachers input:checked')].map(i => i.value);
+  STORE.saveSubject({
+    id: document.getElementById('s-id').value || '',
+    name, nameAr: document.getElementById('s-nameAr').value.trim(),
+    stage: document.getElementById('s-stage').value, teachers,
+    coordinator: document.getElementById('s-coord').value,
+    supervisor: document.getElementById('s-super').value,
+    ministryTotal: document.getElementById('s-ministry').checked,
+    hlsTotal: document.getElementById('s-hls').checked,
+    totalDegree: document.getElementById('s-total').value === '' ? null : parseFloat(document.getElementById('s-total').value),
+    cw1: document.getElementById('s-cw1').value === '' ? null : parseFloat(document.getElementById('s-cw1').value),
+    cw2: document.getElementById('s-cw2').value === '' ? null : parseFloat(document.getElementById('s-cw2').value)
+  });
+  subModal.hide(); render();
+}
+
+function exportXlsx() {
+  const data = lastRows.map(s => ({
+    'Subject': s.name, 'Arabic name': s.nameAr || '', Stage: s.stage,
+    'Teachers': (s.teachers || []).join(', '), Coordinator: s.coordinator || '', Supervisor: s.supervisor || '',
+    'Total degree': s.totalDegree ?? '', 'CW1': s.cw1 ?? '', 'CW2': s.cw2 ?? '',
+    'Ministry total': s.ministryTotal ? 'Yes' : 'No', 'HLS total': s.hlsTotal ? 'Yes' : 'No'
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  ws['!cols'] = [{wch:18},{wch:18},{wch:10},{wch:26},{wch:16},{wch:16},{wch:11},{wch:6},{wch:6},{wch:13},{wch:10}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Subjects');
+  XLSX.writeFile(wb, 'HLS-Subjects-' + new Date().toISOString().slice(0,10) + '.xlsx');
+}
+
+function askDelete(id) {
+  const s = STORE.subjectById(id); if (!s) return;
+  delId = id;
+  document.getElementById('del-name').textContent = s.name + ' (' + s.stage + ')';
+  delModal.show();
+}
+function confirmDelete() { if (delId) STORE.deleteSubject(delId); delId = null; delModal.hide(); render(); }
+
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    if (!document.getElementById('tbody')) return;
+    subModal = new bootstrap.Modal('#subModal');
+    delModal = new bootstrap.Modal('#delModal');
+    render();
+  }, 0);
+});
+</script>
+</body>
+</html>

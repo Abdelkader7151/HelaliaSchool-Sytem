@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Employee profile · HLS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="assets/css/app.css" rel="stylesheet">
+</head>
+<body data-page="employees" data-title="Employee profile" data-sub="Employees · Profile">
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="content-wrap">
+    <div id="topbar-mount"></div>
+    <div class="page" id="profile-page"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/permissions.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+const id = parseInt(params.get('id') || '1', 10);
+const e = LIBERTY.employees.find(x => x.id === id) || LIBERTY.employees[0];
+
+document.addEventListener('DOMContentLoaded', () => {
+  const tenure = ((new Date('2026-04-28') - new Date(e.start)) / (365.25*86400000)).toFixed(1);
+  document.getElementById('profile-page').innerHTML = `
+    <div class="d-flex align-items-center mb-3">
+      <a href="employees.html" class="btn btn-light-2 btn-sm"><i class="fa-solid fa-arrow-left me-1"></i> Back to employees</a>
+    </div>
+
+    <div class="profile-head">
+      <div class="av-lg">${LIBERTY.initials(e.name)}</div>
+      <div class="flex-grow-1">
+        <div class="name">${e.name}</div>
+        <div class="role">${e.role} · ${e.dept} Section</div>
+        <div class="pills">
+          <span class="pill">${e.status}</span>
+          <span class="pill">FP #${e.fp}</span>
+          <span class="pill">File ${e.file}</span>
+          <span class="pill">${tenure} years</span>
+        </div>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="employee-form.html?id=${e.id}" class="btn btn-light"><i class="fa-regular fa-pen-to-square me-1"></i> Edit</a>
+        <button class="btn btn-light"><i class="fa-solid fa-print me-1"></i> Print</button>
+      </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-3" id="profileTabs">
+      <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-overview">Overview</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-attendance">Attendance</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-leaves">Leaves</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-payroll">Payroll</button></li>
+      <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-docs">Documents</button></li>
+    </ul>
+
+    <div class="tab-content">
+      <!-- Overview -->
+      <div class="tab-pane fade show active" id="tab-overview">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-head"><h2 class="card-title">Personal information</h2></div>
+              <div class="card-body">
+                <div class="field-row"><div class="lbl">Full name</div><div class="val">${e.name}</div></div>
+                <div class="field-row"><div class="lbl">Email</div><div class="val">${e.email}</div></div>
+                <div class="field-row"><div class="lbl">Phone</div><div class="val mono">${e.phone}</div></div>
+                <div class="field-row"><div class="lbl">National ID</div><div class="val mono">2900*****12345</div></div>
+                <div class="field-row"><div class="lbl">Birth date</div><div class="val mono">1989-06-12</div></div>
+                <div class="field-row"><div class="lbl">Gender</div><div class="val">—</div></div>
+                <div class="field-row"><div class="lbl">Address</div><div class="val">Maadi, Cairo</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-head"><h2 class="card-title">Employment</h2></div>
+              <div class="card-body">
+                <div class="field-row"><div class="lbl">Job title</div><div class="val">${e.role}</div></div>
+                <div class="field-row"><div class="lbl">Section</div><div class="val">${e.dept}</div></div>
+                <div class="field-row"><div class="lbl">Manager</div><div class="val">${e.manager}</div></div>
+                <div class="field-row"><div class="lbl">Start date</div><div class="val mono">${e.start}</div></div>
+                <div class="field-row"><div class="lbl">Status</div><div class="val">${e.status}</div></div>
+                <div class="field-row"><div class="lbl">FP code</div><div class="val mono">${e.fp}</div></div>
+                <div class="field-row"><div class="lbl">File #</div><div class="val mono">${e.file}</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-12">
+            <div class="card">
+              <div class="card-head"><h2 class="card-title">Compensation summary</h2></div>
+              <div class="card-body">
+                <div class="row g-3">
+                  <div class="col-md-3"><div class="kpi"><div class="kpi-label">Basic salary</div><div class="kpi-value mono" style="font-size:22px;">${LIBERTY.money(e.salary)}</div></div></div>
+                  <div class="col-md-3"><div class="kpi"><div class="kpi-label">Allowances</div><div class="kpi-value mono" style="font-size:22px;">${LIBERTY.money(Math.round(e.salary*0.15))}</div></div></div>
+                  <div class="col-md-3"><div class="kpi"><div class="kpi-label">Deductions</div><div class="kpi-value mono" style="font-size:22px;">${LIBERTY.money(Math.round(e.salary*0.12))}</div></div></div>
+                  <div class="col-md-3"><div class="kpi"><div class="kpi-label">Net (April)</div><div class="kpi-value mono" style="font-size:22px;color:var(--ok);">${LIBERTY.money(Math.round(e.salary*1.03))}</div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Attendance -->
+      <div class="tab-pane fade" id="tab-attendance">
+        <div class="card"><div class="card-head"><h2 class="card-title">Last 7 days</h2></div>
+          <div class="card-body">
+            <div class="row g-2">
+              ${['Sun 27','Mon 28','Tue 29','Wed 30','Thu 1','Fri 2','Sat 3'].map((d,i) => `
+                <div class="col">
+                  <div class="kpi text-center" style="padding:14px;">
+                    <div class="muted small">${d}</div>
+                    <div class="kpi-icon ${i<5?'green':'amber'} mx-auto mt-2 mb-2" style="width:40px;height:40px;font-size:14px;">
+                      <i class="fa-solid ${i<5?'fa-check':'fa-moon'}"></i>
+                    </div>
+                    <div class="mono small">${i<5?'08:00':'Off'}</div>
+                  </div>
+                </div>`).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leaves -->
+      <div class="tab-pane fade" id="tab-leaves">
+        <div class="row g-3 mb-3">
+          <div class="col-md-3"><div class="kpi"><div class="kpi-label">Annual balance</div><div class="kpi-value">14</div><span class="muted small">of 21 days</span></div></div>
+          <div class="col-md-3"><div class="kpi"><div class="kpi-label">Sick used</div><div class="kpi-value">3</div><span class="muted small">of 14 days</span></div></div>
+          <div class="col-md-3"><div class="kpi"><div class="kpi-label">Casual used</div><div class="kpi-value">2</div><span class="muted small">of 7 days</span></div></div>
+          <div class="col-md-3"><div class="kpi"><div class="kpi-label">Pending</div><div class="kpi-value">1</div><span class="muted small">request</span></div></div>
+        </div>
+        <div class="table-wrap">
+          <table class="table mb-0">
+            <thead><tr><th>Type</th><th>From</th><th>To</th><th class="num">Days</th><th>Reason</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td><span class="pill purple">Annual</span></td><td class="mono">2026-05-04</td><td class="mono">2026-05-08</td><td class="num">5</td><td>Family vacation</td><td><span class="pill warn">Pending</span></td></tr>
+              <tr><td><span class="pill info">Sick</span></td><td class="mono">2026-02-12</td><td class="mono">2026-02-13</td><td class="num">2</td><td>Flu</td><td><span class="pill ok">Approved</span></td></tr>
+              <tr><td><span class="pill purple">Annual</span></td><td class="mono">2025-12-22</td><td class="mono">2025-12-30</td><td class="num">7</td><td>Winter break</td><td><span class="pill ok">Approved</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Payroll -->
+      <div class="tab-pane fade" id="tab-payroll">
+        <div class="table-wrap">
+          <table class="table mb-0">
+            <thead><tr><th>Period</th><th class="num">Basic</th><th class="num">Allowances</th><th class="num">Deductions</th><th class="num">Net</th><th>Status</th></tr></thead>
+            <tbody>
+              ${['April 2026','March 2026','February 2026','January 2026'].map(p => `
+                <tr>
+                  <td>${p}</td>
+                  <td class="num mono">${LIBERTY.money(e.salary)}</td>
+                  <td class="num mono">${LIBERTY.money(Math.round(e.salary*0.15))}</td>
+                  <td class="num mono">-${LIBERTY.money(Math.round(e.salary*0.12))}</td>
+                  <td class="num mono fw-semibold">${LIBERTY.money(Math.round(e.salary*1.03))}</td>
+                  <td><span class="pill ok">Paid</span></td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Documents -->
+      <div class="tab-pane fade" id="tab-docs">
+        <div class="card">
+          <div class="card-body">
+            <div class="row g-3">
+              ${['Contract.pdf','National ID.jpg','CV.pdf','Bank Letter.pdf','Insurance.pdf'].map(d => `
+                <div class="col-md-4">
+                  <div class="d-flex gap-3 align-items-center p-3 border rounded">
+                    <i class="fa-regular fa-file-lines text-primary fs-4"></i>
+                    <div class="flex-grow-1">
+                      <div class="fw-semibold small">${d}</div>
+                      <div class="muted" style="font-size:11px;">Uploaded 2024-08-15</div>
+                    </div>
+                    <button class="btn btn-icon btn-light-2"><i class="fa-solid fa-download"></i></button>
+                  </div>
+                </div>`).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+});
+</script>
+</body>
+</html>

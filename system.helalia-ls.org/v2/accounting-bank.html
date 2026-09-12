@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Bank · HLS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="assets/css/app.css" rel="stylesheet">
+</head>
+<body data-page="acct-bank" data-title="Bank" data-sub="البنك — Bank account · May 2026">
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="content-wrap">
+    <div id="topbar-mount"></div>
+
+    <div class="page">
+
+      <div class="tabs-nav mb-4" id="books">
+        <a href="accounting-ledger.html">Ledger · الحركة</a>
+        <a href="accounting-treasury.html">Treasury · الخزنة</a>
+        <a href="accounting-bank.html" class="active">Bank · البنك</a>
+        <a href="student-fees.html">Student fees · مصاريف الطلبة</a>
+        <a href="bus-fees.html">Bus fees · رسوم الباص</a>
+      </div>
+
+      <div class="acct-card" style="background:linear-gradient(135deg,#0c4a6e,#1e3a8a);">
+        <div class="ac-ic"><i class="fa-solid fa-building-columns"></i></div>
+        <div>
+          <div class="ac-label">Current account · الحساب الجاري</div>
+          <div class="ac-name">Commercial International Bank (CIB)</div>
+          <div class="ac-sub" id="ac-iban">EG— · 0019 0000 0000 0000</div>
+        </div>
+        <div class="ac-bal">
+          <div class="v" id="ac-bal">EGP 0</div>
+          <div class="l">Available balance</div>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon green"><i class="fa-solid fa-arrow-down"></i></div><div class="kpi-label">Deposits (in)</div><div class="kpi-value mono" id="k-in" style="font-size:20px;">EGP 0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon" style="background:var(--err-soft);color:var(--err)"><i class="fa-solid fa-arrow-up"></i></div><div class="kpi-label">Withdrawals (out)</div><div class="kpi-value mono" id="k-out" style="font-size:20px;">EGP 0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon purple"><i class="fa-solid fa-money-check-dollar"></i></div><div class="kpi-label">Payroll batch</div><div class="kpi-value mono" id="k-pay" style="font-size:20px;">EGP 0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon blue"><i class="fa-solid fa-receipt"></i></div><div class="kpi-label">Transactions</div><div class="kpi-value" id="k-n">0</div></div></div>
+      </div>
+
+      <div class="page-head">
+        <div class="d-flex gap-2 align-items-center">
+          <span style="font-weight:600;">Bank statement — كشف حساب</span>
+          <span class="pill ok">Reconciled</span>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-light-2" onclick="openTx('Deposit')"><i class="fa-solid fa-arrow-down me-1" style="color:var(--ok);"></i> Deposit</button>
+          <button class="btn btn-primary" onclick="openTx('Withdrawal')"><i class="fa-solid fa-arrow-up me-1"></i> Record transaction</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table mb-0 align-middle">
+          <thead>
+            <tr>
+              <th>Date</th><th>Description</th><th>Reference</th>
+              <th class="num">In (إيداع)</th><th class="num">Out (سحب)</th><th class="num">Balance</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Record transaction modal -->
+<div class="modal fade" id="txModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div><div class="card-title" id="txTitle">Record bank transaction</div>
+          <div class="card-sub">تسجيل حركة بنك · CIB current account</div></div>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Direction</label>
+          <div class="d-flex gap-2">
+            <label class="dir-opt flex-fill"><input type="radio" name="dir" value="Deposit" hidden><span class="dir-pill" data-dir="Deposit"><i class="fa-solid fa-arrow-down me-1"></i> Deposit · إيداع</span></label>
+            <label class="dir-opt flex-fill"><input type="radio" name="dir" value="Withdrawal" hidden><span class="dir-pill" data-dir="Withdrawal"><i class="fa-solid fa-arrow-up me-1"></i> Withdrawal · سحب</span></label>
+          </div>
+        </div>
+        <div class="row g-3">
+          <div class="col-7"><label class="form-label">Date</label><input type="date" class="form-control" id="f-date" value="2026-05-28"></div>
+          <div class="col-5"><label class="form-label">Amount (EGP)</label><input type="number" class="form-control mono" id="f-amount" placeholder="0" min="0"></div>
+          <div class="col-12"><label class="form-label">Description</label><input type="text" class="form-control" id="f-desc" placeholder="e.g. Supplier transfer — uniforms"></div>
+          <div class="col-12"><label class="form-label">Reference</label><input type="text" class="form-control mono" id="f-ref" placeholder="TRF-0000"></div>
+        </div>
+        <div class="text-danger small mt-2" id="f-err" style="display:none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light-2" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" onclick="submitTx()"><i class="fa-solid fa-check me-1"></i> Record</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/payroll.js"></script>
+<script src="assets/js/permissions.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+const OPENING = 1250000;
+const NET = PAYROLL.totals().net;
+const SEED = [
+  { date: '2026-05-01', desc: 'Opening balance', ref: '—',                 in: 0,      out: 0 },
+  { date: '2026-05-03', desc: 'Tuition fees deposit', ref: 'DEP-55180',    in: 480000, out: 0 },
+  { date: '2026-05-10', desc: 'Office rent — May', ref: 'TRF-2210',        in: 0,      out: 60000 },
+  { date: '2026-05-18', desc: 'Supplier payment — books', ref: 'TRF-2231', in: 0,      out: 92000 },
+  { date: '2026-05-28', desc: 'Payroll batch — May salaries', ref: 'CIB-PAYROLL-0418', in: 0, out: NET, payroll: true },
+  { date: '2026-05-30', desc: 'Bank charges', ref: 'CHG-0530',            in: 0,      out: 850 }
+];
+const KEY = 'liberty_bank_tx';
+let txModal, refSeq = 2400;
+
+const stored = () => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (_) { return []; } };
+const saveStored = a => localStorage.setItem(KEY, JSON.stringify(a));
+
+function allRows() {
+  const s = SEED.map((t, i) => ({ ...t, _seq: i }));
+  const u = stored().map((t, i) => ({ ...t, _seq: 1000 + i, user: true }));
+  return s.concat(u).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a._seq - b._seq);
+}
+
+function render() {
+  const rows = allRows();
+  let bal = OPENING, totIn = 0, totOut = 0;
+  document.getElementById('tbody').innerHTML = rows.map(t => {
+    bal += t.in - t.out; totIn += t.in; totOut += t.out;
+    const hl = t.payroll ? ' style="background:var(--primary-soft);"' : (t.user ? ' style="background:var(--ok-soft);"' : '');
+    return `
+      <tr${hl}>
+        <td class="mono small">${t.date}</td>
+        <td>${t.payroll ? '<i class="fa-solid fa-money-check-dollar me-1" style="color:var(--primary);"></i>' : ''}${t.desc}${t.user ? ' <span class="pill ok" style="margin-left:4px;">New</span>' : ''}</td>
+        <td class="mono small muted">${t.ref}</td>
+        <td class="num mono text-success">${t.in ? '+' + LIBERTY.money(t.in) : ''}</td>
+        <td class="num mono text-danger">${t.out ? '-' + LIBERTY.money(t.out) : ''}</td>
+        <td class="num mono fw-bold">${LIBERTY.money(bal)}</td>
+      </tr>`;
+  }).join('');
+  document.getElementById('ac-bal').textContent = LIBERTY.money(bal);
+  document.getElementById('ac-iban').textContent = PAYROLL.iban({ id: 1 }).replace(/(.{4})/g, '$1 ').trim();
+  document.getElementById('k-in').textContent   = LIBERTY.money(totIn);
+  document.getElementById('k-out').textContent  = LIBERTY.money(totOut);
+  document.getElementById('k-pay').textContent  = LIBERTY.money(NET);
+  document.getElementById('k-n').textContent    = rows.filter(t => t.ref !== '—').length;
+}
+
+function setDir(dir) {
+  document.querySelector(`input[name="dir"][value="${dir}"]`).checked = true;
+  document.querySelectorAll('.dir-pill').forEach(p => p.classList.toggle('active', p.dataset.dir === dir));
+  document.getElementById('txTitle').textContent = dir === 'Deposit' ? 'Record bank deposit' : 'Record bank withdrawal';
+}
+function openTx(dir) {
+  document.getElementById('f-amount').value = '';
+  document.getElementById('f-desc').value = '';
+  document.getElementById('f-ref').value = (dir === 'Deposit' ? 'DEP-' : 'TRF-') + (++refSeq);
+  document.getElementById('f-err').style.display = 'none';
+  setDir(dir);
+  txModal.show();
+}
+function submitTx() {
+  const dir = document.querySelector('input[name="dir"]:checked').value;
+  const date = document.getElementById('f-date').value;
+  const amount = Math.round(parseFloat(document.getElementById('f-amount').value) || 0);
+  const desc = document.getElementById('f-desc').value.trim();
+  const ref = document.getElementById('f-ref').value.trim() || '—';
+  const err = document.getElementById('f-err');
+  if (!date || amount <= 0 || !desc) { err.textContent = 'Enter a date, description and a valid amount.'; err.style.display = 'block'; return; }
+  const list = stored();
+  list.push({ date, desc, ref, in: dir === 'Deposit' ? amount : 0, out: dir === 'Withdrawal' ? amount : 0 });
+  saveStored(list);
+  render();
+  txModal.hide();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  txModal = new bootstrap.Modal('#txModal');
+  document.querySelectorAll('.dir-pill').forEach(p => p.addEventListener('click', () => setDir(p.dataset.dir)));
+  render();
+});
+</script>
+</body>
+</html>

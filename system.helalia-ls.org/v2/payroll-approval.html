@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Payroll approval · HLS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="assets/css/app.css" rel="stylesheet">
+</head>
+<body data-page="workflow" data-title="Payroll workflow" data-sub="May 2026 — HR → Payroll → Accounting">
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="content-wrap">
+    <div id="topbar-mount"></div>
+
+    <div class="page">
+
+      <!-- Stepper -->
+      <div id="stepper" class="mb-4"></div>
+
+      <!-- Money summary -->
+      <div class="pay-summary mb-4">
+        <div class="ps-cell"><div class="ps-label">Employees</div><div class="ps-value" id="s-count" style="color:var(--ink);"></div></div>
+        <div class="ps-cell"><div class="ps-label">Gross</div><div class="ps-value" id="s-gross" style="color:var(--ink);"></div></div>
+        <div class="ps-cell"><div class="ps-label">Deductions</div><div class="ps-value" id="s-ded" style="color:var(--err);"></div></div>
+        <div class="ps-cell"><div class="ps-label">Net payable</div><div class="ps-value" id="s-net" style="color:var(--ok);"></div></div>
+        <div class="ps-cell"><div class="ps-label">Status</div><div class="mt-2" id="s-status"></div></div>
+      </div>
+
+      <div class="row g-4">
+        <!-- Stage cards -->
+        <div class="col-lg-7">
+          <div class="card">
+            <div class="card-head">
+              <div><div class="card-title">Workflow stages</div><div class="card-sub">Each stage opens the role's screen</div></div>
+            </div>
+            <div class="card-body" id="stage-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+          </div>
+        </div>
+
+        <!-- Audit trail -->
+        <div class="col-lg-5">
+          <div class="card">
+            <div class="card-head">
+              <div><div class="card-title">Audit trail</div><div class="card-sub">Approval history for this run</div></div>
+              <button class="btn btn-light-2 btn-sm" onclick="resetRun()" title="Reset demo run"><i class="fa-solid fa-rotate-left me-1"></i> Reset</button>
+            </div>
+            <div class="card-body">
+              <div class="timeline" id="timeline"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/payroll.js"></script>
+<script src="assets/js/permissions.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+const STAGE_LINKS = [
+  { stage: 1, dept: 'HR',         href: 'employees.html',          icon: 'fa-users',             title: 'HR data',            desc: 'Employees, attendance, leaves, overtime, deductions' },
+  { stage: 2, dept: 'Payroll',    href: 'payroll-officer.html',    icon: 'fa-calculator',        title: 'Payroll calculation',desc: 'HR Officer builds & submits the salary sheet' },
+  { stage: 3, dept: 'Payroll',    href: 'payroll-hr-manager.html', icon: 'fa-user-check',        title: 'Payroll approval',   desc: 'HR Manager reviews and approves' },
+  { stage: 4, dept: 'Accounting', href: 'payroll-posting.html',    icon: 'fa-right-left',        title: 'Post to accounting', desc: 'Auto-generate & post the journal entry' },
+  { stage: 5, dept: 'Accounting', href: 'payroll-finance.html',    icon: 'fa-building-columns',  title: 'Accounting',         desc: 'Finance reviews entries & prepares the bank file' },
+  { stage: 6, dept: 'Accounting', href: 'payroll-payment.html',    icon: 'fa-money-check-dollar',title: 'Payment & settlement', desc: 'Bank/cash, record payment & close the period' }
+];
+
+const DEPTS = [
+  { key: 'HR',         ar: 'شئون العاملين', icon: 'fa-user-group',       color: 'var(--ok)' },
+  { key: 'Payroll',    ar: 'محرك الرواتب',  icon: 'fa-calculator',       color: 'var(--warn)' },
+  { key: 'Accounting', ar: 'الحسابات',      icon: 'fa-building-columns',  color: 'var(--info)' }
+];
+
+function render() {
+  const t = PAYROLL.totals();
+  const s = PAYROLL.load();
+  document.getElementById('s-count').textContent = t.count;
+  document.getElementById('s-gross').textContent = LIBERTY.money(t.gross);
+  document.getElementById('s-ded').textContent   = '-' + LIBERTY.money(t.deduction);
+  document.getElementById('s-net').textContent   = LIBERTY.money(t.net);
+
+  const prog = PAYROLL.stepperProgress(s);
+  const statusMap = s.closed ? { p: 'ok', t: 'Closed' }
+    : s.paid ? { p: 'info', t: 'Paid' }
+    : [null, { p: 'warn', t: 'Calculating' }, { p: 'info', t: 'Pending HR' }, { p: 'purple', t: 'Posting' }, { p: 'info', t: 'In accounting' }, { p: 'purple', t: 'Ready to pay' }, { p: 'ok', t: 'Closed' }][prog];
+  document.getElementById('s-status').innerHTML = `<span class="pill ${statusMap.p}">${statusMap.t}</span>`;
+
+  PAYROLL.renderStepper('stepper', prog + 1);
+
+  // stage cards grouped into the 3 departments
+  function cardHtml(st) {
+    let state, pill;
+    if (st.stage <= prog)           { state = 'done';     pill = '<span class="pill ok">Done</span>'; }
+    else if (st.stage === prog + 1) { state = 'current';  pill = '<span class="pill purple">Current</span>'; }
+    else                            { state = 'upcoming'; pill = '<span class="pill muted">Waiting</span>'; }
+    const clickable = st.stage <= prog + 1;
+    const iconBg = state === 'done' ? 'background:var(--ok-soft);color:var(--ok)'
+                 : state === 'current' ? 'background:var(--primary-soft);color:var(--primary)'
+                 : 'background:var(--line-2);color:var(--ink-4)';
+    return `
+      <a href="${clickable ? st.href : 'javascript:void(0)'}" class="d-flex align-items-center gap-3 p-3"
+         style="border:1px solid var(--line);border-radius:10px;${clickable ? '' : 'opacity:.55;pointer-events:none;'}color:var(--ink);">
+        <div style="width:40px;height:40px;border-radius:10px;display:grid;place-items:center;font-size:16px;flex-shrink:0;${iconBg}">
+          <i class="fa-solid ${st.icon}"></i>
+        </div>
+        <div class="flex-grow-1">
+          <div style="font-weight:600;font-size:14px;">${st.stage}. ${st.title}</div>
+          <div class="muted" style="font-size:12px;">${st.desc}</div>
+        </div>
+        ${pill}
+        ${clickable ? '<i class="fa-solid fa-chevron-right muted ms-2"></i>' : ''}
+      </a>`;
+  }
+  document.getElementById('stage-list').innerHTML = DEPTS.map(d => {
+    const cards = STAGE_LINKS.filter(st => st.dept === d.key).map(cardHtml).join('');
+    return `
+      <div class="dept-lane">
+        <div class="dept-head">
+          <span class="dept-ic" style="color:${d.color};"><i class="fa-solid ${d.icon}"></i></span>
+          <span class="dept-name">${d.key}</span>
+          <span class="dept-ar">${d.ar}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;">${cards}</div>
+      </div>`;
+  }).join('');
+
+  // timeline
+  const tl = document.getElementById('timeline');
+  if (!s.log.length) {
+    tl.innerHTML = '<div class="timeline-empty">No actions yet. Start at <strong>Payroll calculation</strong> to run the workflow.</div>';
+  } else {
+    tl.innerHTML = s.log.map(l => `
+      <div class="timeline-item">
+        <div class="tl-dot ${l.warn ? 'warn' : 'ok'}"><i class="fa-solid ${l.warn ? 'fa-rotate-left' : 'fa-check'}"></i></div>
+        <div class="tl-body">
+          <div class="tl-action">${l.action}</div>
+          <div class="tl-meta">${l.by} · ${l.role} · ${PAYROLL.fmtTime(l.at)}</div>
+        </div>
+      </div>`).join('');
+  }
+}
+
+function resetRun() {
+  PAYROLL.reset();
+  render();
+}
+
+document.addEventListener('DOMContentLoaded', render);
+</script>
+</body>
+</html>

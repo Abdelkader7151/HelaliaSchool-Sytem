@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Fees · HLS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="assets/css/app.css" rel="stylesheet">
+</head>
+<body data-page="student-fees" data-title="Fees" data-sub="المصاريف — invoices · sibling discount · collection">
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="content-wrap">
+    <div id="topbar-mount"></div>
+
+    <div class="page">
+
+      <div class="tabs-nav mb-4" id="books">
+        <a href="accounting-ledger.html">Ledger · الحركة</a>
+        <a href="accounting-treasury.html">Treasury · الخزنة</a>
+        <a href="accounting-bank.html">Bank · البنك</a>
+        <a href="student-fees.html" class="active">Student fees · مصاريف الطلبة</a>
+        <a href="bus-fees.html">Bus fees · رسوم الباص</a>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon blue"><i class="fa-solid fa-file-invoice-dollar"></i></div><div class="kpi-label">Net billed</div><div class="kpi-value mono" id="k-billed" style="font-size:20px;">EGP 0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon green"><i class="fa-solid fa-hand-holding-dollar"></i></div><div class="kpi-label">Collected</div><div class="kpi-value mono" id="k-collected" style="font-size:20px;">EGP 0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon amber"><i class="fa-solid fa-clock"></i></div><div class="kpi-label">Outstanding</div><div class="kpi-value mono" id="k-out" style="font-size:20px;">EGP 0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon purple"><i class="fa-solid fa-percent"></i></div><div class="kpi-label">Sibling discount</div><div class="kpi-value mono" id="k-disc" style="font-size:20px;">EGP 0</div></div></div>
+      </div>
+
+      <div class="page-head">
+        <div class="d-flex gap-2 align-items-center">
+          <span style="font-weight:600;">Tuition invoices — كشف المصاريف</span>
+          <span class="pill info" id="disc-state">Sibling discount on</span>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-light-2" onclick="openSettings()"><i class="fa-solid fa-sliders me-1"></i> Sibling discount</button>
+          <button class="btn btn-primary" onclick="openCollect()"><i class="fa-solid fa-hand-holding-dollar me-1"></i> Collect payment</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table mb-0 align-middle">
+          <thead>
+            <tr>
+              <th>Student</th><th>Family</th><th>Stage</th>
+              <th class="text-center">Rank</th>
+              <th class="num">Gross</th><th class="num">Sibling disc.</th><th class="num">Net due</th>
+              <th class="num">Paid</th><th class="num">Balance</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+          <tfoot id="tfoot"></tfoot>
+        </table>
+      </div>
+
+      <div class="note-row mt-3" style="display:flex;gap:9px;align-items:flex-start;background:var(--primary-soft);border-radius:12px;padding:12px 14px;font-size:12.5px;color:var(--ink-2);">
+        <i class="fa-solid fa-link" style="color:var(--primary);margin-top:2px;"></i>
+        <span>Every collected payment posts automatically to <b>Accounting</b>: a receipt voucher in the <b>General journal</b> (DR Cash/Bank · CR Tuition revenue) plus an entry in the <b>Treasury (الخزنة)</b> or <b>Bank (البنك)</b> book.</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===== Sibling discount settings modal ===== -->
+<div class="modal fade" id="setModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div><div class="card-title">Sibling discount</div>
+          <div class="card-sub">نسبة خصم الأخوة — applied to tuition only</div></div>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex align-items-center justify-content-between p-3 mb-3" style="background:var(--line-2);border-radius:11px;">
+          <div><div style="font-weight:600;">Enable sibling discount</div>
+            <div class="muted small">تفعيل خصم الأخوة</div></div>
+          <div class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" id="s-enabled" style="width:42px;height:23px;"></div>
+        </div>
+        <div class="muted small mb-2">Discount % off tuition by child order within the family. The eldest (1st) always pays full.</div>
+        <div id="rate-rows"></div>
+        <div class="text-danger small mt-2" id="s-err" style="display:none;"></div>
+      </div>
+      <div class="modal-footer justify-content-between">
+        <button class="btn btn-light-2" onclick="resetDefaults()"><i class="fa-solid fa-rotate-left me-1"></i> Reset</button>
+        <div class="d-flex gap-2">
+          <button class="btn btn-light-2" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-primary" onclick="saveSettings()"><i class="fa-solid fa-check me-1"></i> Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Collect payment modal ===== -->
+<div class="modal fade" id="payModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div><div class="card-title">Collect payment</div>
+          <div class="card-sub">تحصيل مصاريف — posts to accounting</div></div>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3"><label class="form-label">Student</label><div id="p-student-wrap"></div></div>
+        <div id="p-balance" class="d-flex justify-content-between align-items-center p-3 mb-3" style="background:var(--line-2);border-radius:11px;font-size:13px;">
+          <span class="muted">Net due / Paid / Balance</span><span class="mono" id="p-baltext">—</span>
+        </div>
+        <div class="row g-3">
+          <div class="col-6"><label class="form-label">Date</label><input type="date" class="form-control" id="p-date" value="2026-05-28"></div>
+          <div class="col-6"><label class="form-label">Amount (EGP)</label><input type="number" class="form-control mono" id="p-amount" min="0" placeholder="0"></div>
+          <div class="col-12"><label class="form-label">Received into</label>
+            <div class="d-flex gap-2">
+              <label class="dir-opt flex-fill"><input type="radio" name="method" value="Cash" checked hidden><span class="dir-pill active" data-m="Cash"><i class="fa-solid fa-vault me-1"></i> Cash · الخزنة</span></label>
+              <label class="dir-opt flex-fill"><input type="radio" name="method" value="Bank" hidden><span class="dir-pill" data-m="Bank"><i class="fa-solid fa-landmark me-1"></i> Bank · البنك</span></label>
+            </div>
+          </div>
+        </div>
+        <div class="text-danger small mt-2" id="p-err" style="display:none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light-2" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" onclick="submitPayment()"><i class="fa-solid fa-check me-1"></i> Collect &amp; post</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/autocomplete.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/permissions.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+const PAY_KEY = 'liberty_fee_payments';
+const rankLabel = r => ({ 1: '1st', 2: '2nd', 3: '3rd', 4: '4th', 5: '5th', 6: '6th' }[r] || r + 'th');
+const stageColor = { KG: 'pink', Primary: 'blue', Prep: 'amber', Secondary: 'purple' };
+let setModal, payModal, draftCfg;
+
+const payments = () => { try { return JSON.parse(localStorage.getItem(PAY_KEY)) || []; } catch (_) { return []; } };
+const savePayments = a => localStorage.setItem(PAY_KEY, JSON.stringify(a));
+const paidExtra = id => payments().filter(p => p.studentId === id).reduce((s, p) => s + p.amount, 0);
+const famName = id => (LIBERTY.families.find(f => f.id === id) || {}).name || '—';
+
+// effective paid = base seed paid + collected payments
+function effFee(s, cfg) {
+  const f = LIBERTY.studentFee(s, cfg);
+  const paid = f.paid + paidExtra(s.id);
+  return { ...f, paid, balance: f.net - paid };
+}
+
+function render() {
+  const cfg = LIBERTY.discountCfg();
+  document.getElementById('disc-state').textContent = cfg.enabled ? 'Sibling discount on' : 'Sibling discount off';
+  document.getElementById('disc-state').className = 'pill ' + (cfg.enabled ? 'info' : 'muted');
+
+  let billed = 0, collected = 0, out = 0, disc = 0;
+  const roster = LIBERTY.roster();
+  const rows = roster.map(s => {
+    const f = effFee(s, cfg);
+    billed += f.net; collected += f.paid; out += Math.max(0, f.balance); disc += f.discount;
+    const status = f.balance <= 0 ? ['ok', 'Paid'] : f.paid > 0 ? ['warn', 'Partial'] : ['err', 'Due'];
+    return `
+      <tr>
+        <td><div class="row-avatar"><div class="av ${stageColor[s.stage] || 'blue'}">${LIBERTY.initials(s.name)}</div>
+          <div><div class="nm">${s.name}</div><div class="meta mono">${s.id}</div></div></div></td>
+        <td>${famName(s.familyId)}</td>
+        <td><span class="pill ${stageColor[s.stage] || 'muted'}">${s.stage}</span></td>
+        <td class="text-center"><span class="pill ${f.rank === 1 ? 'muted' : 'info'}">${rankLabel(f.rank)}</span></td>
+        <td class="num mono">${LIBERTY.money(f.gross)}</td>
+        <td class="num mono ${f.discount > 0 ? 'text-success' : 'muted'}">${f.discount > 0 ? '-' + LIBERTY.money(f.discount) + ` (${f.pct}%)` : '—'}</td>
+        <td class="num mono fw-semibold">${LIBERTY.money(f.net)}</td>
+        <td class="num mono">${LIBERTY.money(f.paid)}</td>
+        <td class="num mono fw-bold ${f.balance > 0 ? 'text-danger' : 'text-success'}">${LIBERTY.money(f.balance)}</td>
+        <td><span class="pill ${status[0]}">${status[1]}</span></td>
+      </tr>`;
+  }).join('');
+  document.getElementById('tbody').innerHTML = rows;
+  document.getElementById('tfoot').innerHTML = `
+    <tr style="border-top:2px solid var(--line);">
+      <td colspan="4" style="font-weight:700;">Totals</td>
+      <td class="num mono fw-bold">${LIBERTY.money(roster.reduce((a, s) => a + effFee(s, cfg).gross, 0))}</td>
+      <td class="num mono fw-bold text-success">-${LIBERTY.money(disc)}</td>
+      <td class="num mono fw-bold">${LIBERTY.money(billed)}</td>
+      <td class="num mono fw-bold">${LIBERTY.money(collected)}</td>
+      <td class="num mono fw-bold text-danger">${LIBERTY.money(out)}</td><td></td>
+    </tr>`;
+  document.getElementById('k-billed').textContent    = LIBERTY.money(billed);
+  document.getElementById('k-collected').textContent = LIBERTY.money(collected);
+  document.getElementById('k-out').textContent       = LIBERTY.money(out);
+  document.getElementById('k-disc').textContent      = LIBERTY.money(disc);
+}
+
+// ---- discount settings ----
+function openSettings() {
+  draftCfg = LIBERTY.discountCfg();
+  document.getElementById('s-enabled').checked = draftCfg.enabled;
+  document.getElementById('s-err').style.display = 'none';
+  renderRates();
+  setModal.show();
+}
+function renderRates() {
+  const rows = [2, 3, 4, 5, 6].map(r => `
+    <div class="d-flex align-items-center gap-3 py-2" style="border-bottom:1px solid var(--line-2);">
+      <span class="pill info" style="min-width:74px;justify-content:center;">${rankLabel(r)} child</span>
+      <span class="muted small flex-fill">الطفل ${({2:'الثاني',3:'الثالث',4:'الرابع',5:'الخامس',6:'السادس'}[r])}</span>
+      <div class="input-group" style="max-width:130px;">
+        <input type="number" min="0" max="100" class="form-control mono text-end" id="rate-${r}" value="${draftCfg.rates[r] || 0}" oninput="draftCfg.rates[${r}]=parseFloat(this.value)||0;">
+        <span class="input-group-text">%</span>
+      </div>
+    </div>`).join('');
+  document.getElementById('rate-rows').innerHTML = rows;
+}
+function resetDefaults() {
+  draftCfg = JSON.parse(JSON.stringify(LIBERTY.siblingDiscountDefault));
+  document.getElementById('s-enabled').checked = draftCfg.enabled;
+  renderRates();
+}
+function saveSettings() {
+  draftCfg.enabled = document.getElementById('s-enabled').checked;
+  [2, 3, 4, 5, 6].forEach(r => { draftCfg.rates[r] = parseFloat(document.getElementById('rate-' + r).value) || 0; });
+  draftCfg.rates[1] = 0;
+  LIBERTY.saveDiscountCfg(draftCfg);
+  render();
+  setModal.hide();
+}
+
+// ---- collect payment ----
+let pStuAc;
+function onStudentPick() {
+  const s = LIBERTY.roster().find(x => x.id === document.getElementById('p-student').value);
+  if (!s) { document.getElementById('p-baltext').textContent = '—'; return; }
+  const f = effFee(s, LIBERTY.discountCfg());
+  document.getElementById('p-baltext').textContent = `${LIBERTY.money(f.net)} / ${LIBERTY.money(f.paid)} / ${LIBERTY.money(f.balance)}`;
+  document.getElementById('p-amount').value = f.balance > 0 ? f.balance : '';
+}
+function openCollect() {
+  if (!pStuAc) {
+    LIBERTY.autocompleteField(document.getElementById('p-student-wrap'), 'p-student', 'Type a student name…');
+    pStuAc = LIBERTY.autocomplete({
+      inputId: 'p-student-search', hiddenId: 'p-student', boxId: 'p-student-ac',
+      items: () => LIBERTY.roster().map(s => ({ id: s.id, label: s.name, sub: `${famName(s.familyId)} · ${s.stage}` })),
+      onPick: onStudentPick
+    });
+  }
+  const first = LIBERTY.roster()[0];
+  pStuAc.setValue(first ? first.id : '');
+  document.getElementById('p-err').style.display = 'none';
+  setMethod('Cash');
+  onStudentPick();
+  payModal.show();
+}
+function setMethod(m) {
+  document.querySelectorAll('#payModal .dir-pill').forEach(p => p.classList.toggle('active', p.dataset.m === m));
+  document.querySelector(`#payModal input[value="${m}"]`).checked = true;
+}
+function submitPayment() {
+  const s = LIBERTY.roster().find(x => x.id === document.getElementById('p-student').value);
+  const date = document.getElementById('p-date').value;
+  const amount = Math.round(parseFloat(document.getElementById('p-amount').value) || 0);
+  const method = document.querySelector('#payModal input[name="method"]:checked').value;
+  const err = document.getElementById('p-err');
+  if (!s || !date || amount <= 0) { err.textContent = 'Pick a student, date and a valid amount.'; err.style.display = 'block'; return; }
+
+  // 1) record the fee payment
+  const list = payments();
+  const receiptNo = 'RCPT-' + (4500 + list.length);
+  list.push({ studentId: s.id, date, amount, method, receiptNo });
+  savePayments(list);
+
+  // 2) post to the chosen accounting book (treasury / bank) — same keys those pages read
+  const desc = `Tuition — ${s.name} (${famName(s.familyId)}) · ${receiptNo}`;
+  if (method === 'Cash') {
+    pushTo('liberty_treasury_tx', { date, desc, type: 'Receipt', in: amount, out: 0 });
+  } else {
+    pushTo('liberty_bank_tx', { date, desc, ref: receiptNo, in: amount, out: 0 });
+  }
+
+  // 3) post the receipt voucher to the general journal (same key the ledger page reads)
+  const acct = method === 'Cash' ? '1102 · Cash on hand — الخزنة' : '1101 · Bank — CIB';
+  const vlist = jStored();
+  const seq = 420 + vlist.length;
+  vlist.push({
+    no: 'JV-2026-05-' + String(seq).padStart(4, '0'), date,
+    desc: `Tuition fees received — ${s.name} (${receiptNo})`, src: 'Student Affairs · auto',
+    lines: [ { acct, dr: amount, cr: 0 }, { acct: '4101 · Tuition revenue', dr: 0, cr: amount } ]
+  });
+  localStorage.setItem('liberty_ledger_vouchers', JSON.stringify(vlist));
+
+  render();
+  payModal.hide();
+}
+function pushTo(key, obj) {
+  let a; try { a = JSON.parse(localStorage.getItem(key)) || []; } catch (_) { a = []; }
+  a.push(obj); localStorage.setItem(key, JSON.stringify(a));
+}
+function jStored() { try { return JSON.parse(localStorage.getItem('liberty_ledger_vouchers')) || []; } catch (_) { return []; } }
+
+document.addEventListener('DOMContentLoaded', () => {
+  setModal = new bootstrap.Modal('#setModal');
+  payModal = new bootstrap.Modal('#payModal');
+  document.querySelectorAll('#payModal .dir-pill').forEach(p => p.addEventListener('click', () => setMethod(p.dataset.m)));
+  render();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Supplies · HLS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="assets/css/app.css" rel="stylesheet">
+</head>
+<body data-page="inv-supplies" data-title="Supplies" data-sub="المستلزمات — consumable inventory">
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="content-wrap">
+    <div id="topbar-mount"></div>
+
+    <div class="page">
+
+      <div class="tabs-nav mb-4" id="books">
+        <a href="inventory-supplies.html" class="active">Supplies · المستلزمات</a>
+        <a href="inventory-equipment.html">Equipment · الأصول</a>
+        <a href="inventory-maintenance.html">Maintenance · الصيانة</a>
+        <a href="inventory-issues.html">Stock issues · صرف المخزون</a>
+        <a href="inventory-receipts.html">Goods receipts · استلام المخزون</a>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon blue"><i class="fa-solid fa-boxes-stacked"></i></div><div class="kpi-label">Items</div><div class="kpi-value" id="k-items">0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon green"><i class="fa-solid fa-sack-dollar"></i></div><div class="kpi-label">Total value</div><div class="kpi-value mono" id="k-value" style="font-size:20px;">EGP 0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon amber"><i class="fa-solid fa-triangle-exclamation"></i></div><div class="kpi-label">Low stock (&lt;20)</div><div class="kpi-value" id="k-low">0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon purple"><i class="fa-solid fa-tags"></i></div><div class="kpi-label">Categories</div><div class="kpi-value" id="k-cat">0</div></div></div>
+      </div>
+
+      <div class="page-head">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+          <input type="search" class="form-control" id="search" placeholder="Search item, supplier…" style="max-width:240px;" oninput="render()">
+          <select class="form-select" id="f-cat" style="max-width:170px;" onchange="render()"><option value="">All categories</option></select>
+        </div>
+        <button class="btn btn-primary" data-perm="edit" onclick="openAdd()"><i class="fa-solid fa-plus me-1"></i> Add supply</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table mb-0 align-middle">
+          <thead>
+            <tr>
+              <th>Item name</th><th>Category</th><th class="num">Quantity</th><th>Unit</th>
+              <th>Supplier</th><th>Last purchased</th><th class="num">Unit price</th><th class="num">Total value</th><th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+          <tfoot id="tfoot"></tfoot>
+        </table>
+      </div>
+      <div class="muted small mt-2" id="count-line"></div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===== Supply form modal ===== -->
+<div class="modal fade" id="supModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div><div class="card-title" id="sup-mtitle">Add supply</div><div class="card-sub">بيانات الصنف</div></div>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="f-id">
+        <div class="row g-3">
+          <div class="col-md-6"><label class="form-label">Item name *</label><input class="form-control" id="f-name" placeholder="e.g. A4 Paper"></div>
+          <div class="col-md-3"><label class="form-label">Category</label><select class="form-select" id="f-fcat"></select></div>
+          <div class="col-md-3"><label class="form-label">Unit</label><select class="form-select" id="f-unit"></select></div>
+          <div class="col-md-3"><label class="form-label">Quantity</label><input type="number" class="form-control mono" id="f-qty" min="0" value="0"></div>
+          <div class="col-md-3"><label class="form-label">Unit price (EGP)</label><input type="number" class="form-control mono" id="f-price" min="0" value="0" oninput="calcTotal()"></div>
+          <div class="col-md-6"><label class="form-label">Supplier</label><input class="form-control" id="f-supplier" placeholder="Supplier name"></div>
+          <div class="col-md-6"><label class="form-label">Purchase date</label><input type="date" class="form-control" id="f-date"></div>
+          <div class="col-md-6 d-flex align-items-end"><div class="d-flex justify-content-between align-items-center w-100 p-3" style="background:var(--line-2);border-radius:11px;"><span class="muted">Total value</span><span class="mono fw-bold" id="f-total" style="font-size:16px;color:var(--ok)">EGP 0</span></div></div>
+          <div class="col-12"><label class="form-label">Notes</label><input class="form-control" id="f-notes" placeholder="Optional"></div>
+        </div>
+        <div class="text-danger small mt-2" id="f-err" style="display:none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light-2" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" onclick="saveSupply()"><i class="fa-solid fa-check me-1"></i> Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="delModal" tabindex="-1">
+  <div class="modal-dialog modal-sm"><div class="modal-content"><div class="modal-body text-center p-4">
+    <div class="kpi-icon" style="background:var(--err-soft);color:var(--err);width:48px;height:48px;margin:0 auto 12px;font-size:19px;"><i class="fa-solid fa-trash"></i></div>
+    <div style="font-weight:700;margin-bottom:4px;">Delete item?</div><div class="muted small mb-3" id="del-name"></div>
+    <div class="d-flex gap-2"><button class="btn btn-light-2 flex-fill" data-bs-dismiss="modal">Cancel</button>
+    <button class="btn flex-fill" style="background:var(--err);color:#fff;" onclick="confirmDelete()">Delete</button></div>
+  </div></div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/permissions.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+let supModal, delModal, delId = null;
+const catColor = { Stationery: 'blue', Cleaning: 'green', Cafeteria: 'amber', Medical: 'red', Lab: 'purple', IT: 'info', Maintenance: 'muted', Sports: 'pink' };
+
+function render() {
+  const all = STORE.supplies();
+  const q = (document.getElementById('search').value || '').toLowerCase();
+  const fc = document.getElementById('f-cat').value;
+  const rows = all.filter(s => {
+    if (fc && s.category !== fc) return false;
+    if (q && !(`${s.name} ${s.supplier}`.toLowerCase().includes(q))) return false;
+    return true;
+  });
+  document.getElementById('tbody').innerHTML = rows.map(s => {
+    const total = s.qty * s.price;
+    return `
+      <tr${s.qty < 20 ? ' style="background:var(--warn-soft)"' : ''}>
+        <td><div style="font-weight:700;">${s.name}</div><div class="muted small mono">${s.id}</div></td>
+        <td><span class="pill ${catColor[s.category] || 'muted'}">${s.category}</span></td>
+        <td class="num fw-semibold">${s.qty}${s.qty < 20 ? ' <i class="fa-solid fa-triangle-exclamation" style="color:var(--warn);font-size:10px" title="Low stock"></i>' : ''}</td>
+        <td>${s.unit}</td>
+        <td class="small">${s.supplier || '—'}</td>
+        <td class="mono small">${s.purchased || '—'}</td>
+        <td class="num mono">${LIBERTY.money(s.price)}</td>
+        <td class="num mono fw-bold">${LIBERTY.money(total)}</td>
+        <td class="text-end">
+          <button class="btn-icon" title="Edit" data-perm="edit" onclick="openEdit('${s.id}')"><i class="fa-solid fa-pen"></i></button>
+          <button class="btn-icon" title="Delete" data-perm="delete" onclick="askDelete('${s.id}')" style="color:var(--err);"><i class="fa-solid fa-trash"></i></button>
+        </td>
+      </tr>`;
+  }).join('') || `<tr><td colspan="9" class="text-center muted" style="padding:30px">No supplies match.</td></tr>`;
+
+  const totVal = rows.reduce((a, s) => a + s.qty * s.price, 0);
+  document.getElementById('tfoot').innerHTML = rows.length ? `<tr style="border-top:2px solid var(--line)"><td colspan="7" style="font-weight:700">Total inventory value</td><td class="num mono fw-bold">${LIBERTY.money(totVal)}</td><td></td></tr>` : '';
+  document.getElementById('count-line').textContent = `${rows.length} of ${all.length} items`;
+  document.getElementById('k-items').textContent = all.length;
+  document.getElementById('k-value').textContent = LIBERTY.money(all.reduce((a, s) => a + s.qty * s.price, 0));
+  document.getElementById('k-low').textContent = all.filter(s => s.qty < 20).length;
+  document.getElementById('k-cat').textContent = new Set(all.map(s => s.category)).size;
+}
+
+function calcTotal() {
+  const t = (parseFloat(document.getElementById('f-qty').value) || 0) * (parseFloat(document.getElementById('f-price').value) || 0);
+  document.getElementById('f-total').textContent = LIBERTY.money(Math.round(t));
+}
+function fillSelects() {
+  const cats = LIBERTY.supplyCategories.map(c => `<option>${c}</option>`).join('');
+  document.getElementById('f-fcat').innerHTML = cats;
+  document.getElementById('f-cat').innerHTML = '<option value="">All categories</option>' + cats;
+  document.getElementById('f-unit').innerHTML = LIBERTY.supplyUnits.map(u => `<option>${u}</option>`).join('');
+}
+function openAdd() {
+  document.getElementById('sup-mtitle').textContent = 'Add supply';
+  ['f-id', 'f-name', 'f-supplier', 'f-notes'].forEach(i => document.getElementById(i).value = '');
+  document.getElementById('f-qty').value = 0; document.getElementById('f-price').value = 0;
+  document.getElementById('f-fcat').selectedIndex = 0; document.getElementById('f-unit').selectedIndex = 0;
+  document.getElementById('f-date').value = '2026-06-24';
+  document.getElementById('f-err').style.display = 'none'; calcTotal(); supModal.show();
+}
+function openEdit(id) {
+  const s = STORE.supplies().find(x => x.id === id); if (!s) return;
+  document.getElementById('sup-mtitle').textContent = 'Edit supply';
+  document.getElementById('f-id').value = s.id;
+  document.getElementById('f-name').value = s.name; document.getElementById('f-fcat').value = s.category;
+  document.getElementById('f-unit').value = s.unit; document.getElementById('f-qty').value = s.qty;
+  document.getElementById('f-price').value = s.price; document.getElementById('f-supplier').value = s.supplier || '';
+  document.getElementById('f-date').value = s.purchased || ''; document.getElementById('f-notes').value = s.notes || '';
+  document.getElementById('f-err').style.display = 'none'; calcTotal(); supModal.show();
+}
+function saveSupply() {
+  const name = document.getElementById('f-name').value.trim();
+  const err = document.getElementById('f-err');
+  if (!name) { err.textContent = 'Item name is required.'; err.style.display = 'block'; return; }
+  STORE.saveSupply({
+    id: document.getElementById('f-id').value || '', name,
+    category: document.getElementById('f-fcat').value, unit: document.getElementById('f-unit').value,
+    qty: parseInt(document.getElementById('f-qty').value) || 0, price: parseFloat(document.getElementById('f-price').value) || 0,
+    supplier: document.getElementById('f-supplier').value.trim(), purchased: document.getElementById('f-date').value,
+    notes: document.getElementById('f-notes').value.trim()
+  });
+  supModal.hide(); render();
+}
+function askDelete(id) { const s = STORE.supplies().find(x => x.id === id); delId = id; document.getElementById('del-name').textContent = s.name + ' · ' + s.id; delModal.show(); }
+function confirmDelete() { if (delId) STORE.deleteSupply(delId); delId = null; delModal.hide(); render(); }
+
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    if (!document.getElementById('tbody')) return;
+    supModal = new bootstrap.Modal('#supModal'); delModal = new bootstrap.Modal('#delModal');
+    fillSelects(); render();
+  }, 0);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+# HelaliaSchool-Sytem — live cPanel code mirror
+# Private repo: keep live DB/config files. Ignore storage & junk only.
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.idea/
+.vscode/
+
+# Logs / temp
+*.log
+logs/
+tmp/
+temp/
+cache/
+
+# Runtime / uploads / PII photo storage (stay on server only)
+**/kids/
+**/kid/
+**/gallery/
+**/uploads/
+**/attachments/
+**/media/
+**/gps-pending/
+**/img/
+**/images/
+**/photos/
+
+# Vendor / bloat (not core app logic)
+**/vendors/
+**/bower_components/
+**/node_modules/
+**/vendor/
+**/PHPExcel/
+**/PHPExcel_old/
+**/tcpdf/
+**/font-awesome-4.7.0/
+**/source/
+**/__MACOSX/
+cgi-bin/
+
+# Archives / large binaries
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+*.mp4
+*.mov
+*.avi
+*.iso
+
+# Local sync helpers (never commit FTP passwords)
+live-github-sync.log
+.env
+.env.*
+!.env.example

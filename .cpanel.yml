@@ -1,0 +1,8 @@
+---
+# Manual deploy only — run from cPanel Git Version Control → Deploy
+# Copies into live docroots without deleting server-only storage folders.
+deployment:
+  tasks:
+    - export DEPLOYROOT=/home/helalia
+    - /bin/cp -a system.helalia-ls.org/. $DEPLOYROOT/system.helalia-ls.org/
+    - /bin/cp -a public_html/. $DEPLOYROOT/public_html/

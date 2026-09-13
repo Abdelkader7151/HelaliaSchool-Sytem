@@ -212,11 +212,15 @@
 <script>
 (function () {
   var more = document.getElementById('hw-more');
+  if (!more) return;
   more.addEventListener('click', function () {
     more.setAttribute('aria-busy', 'true');
     more.innerHTML = '<span class="spin"></span>تحميل';
     setTimeout(function () {
-      document.querySelector('.hw--old').closest('.rows').classList.add('is-expanded');
+      var old = document.querySelector('.hw--old');
+      if (old && old.closest('.rows')) {
+        old.closest('.rows').classList.add('is-expanded');
+      }
       more.remove();
     }, 600);
   });

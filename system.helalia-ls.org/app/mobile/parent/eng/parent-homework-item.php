@@ -2,6 +2,7 @@
       include("../../includes/logout.php");
       include("../../includes/access.php");
       include("../../includes/functions_eng.php");
+      require_once dirname(__DIR__) . '/includes/file-media.php';
       
       $kid_id = escape($_GET['kid']); 
       $id = escape($_GET['id']); 
@@ -107,9 +108,7 @@
           <span class="chip t-gold"><?php echo emp_name($row_get_data['emp_id']); ?></span>
           <span class="chip t-coral chip--solid"><?php echo date("d M, Y", $row_get_data['date']); ?></span>
         </div>
-           <?php if($row_get_data['banner']!=NULL && file_exists('../../../../homework/'.$row_get_data['banner'])==1){ ?> 
-          <img src="../../../../homework/<?php if($row_get_data['banner']!=NULL && file_exists('../../../../homework/'.$row_get_data['banner'])==1){echo $row_get_data['banner'];} ?>" alt=" ">
-          <?php } ?>
+           <?php echo parent_render_banner_media($row_get_data['banner'], '../../../../homework/', 'eng'); ?>
       </div>
 
 

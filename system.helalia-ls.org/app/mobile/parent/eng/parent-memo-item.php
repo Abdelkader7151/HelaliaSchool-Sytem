@@ -2,6 +2,7 @@
       include("../../includes/logout.php");
       include("../../includes/access.php");
       include("../../includes/functions_eng.php");
+      require_once dirname(__DIR__) . '/includes/file-media.php';
       
       $kid_id = escape($_GET['kid']); 
       $id = escape($_GET['id']); 
@@ -109,15 +110,19 @@
   
 <div class="card stack">
 
-        <h2 class="hwtitle"><?php echo $row_get_data['name_eng']; ?></h2>
-        <p class="lede"><?php echo $row_get_data['text_eng']; ?></p>
+        <?php
+          $memoTitle = trim((string) $row_get_data['name_eng']);
+          $memoText = trim((string) $row_get_data['text_eng']);
+        ?>
+        <h2 class="hwtitle"><?php echo htmlspecialchars($memoTitle !== '' ? $memoTitle : 'Memo', ENT_QUOTES, 'UTF-8'); ?></h2>
+        <?php if ($memoText !== '') { ?>
+        <p class="lede"><?php echo $memoText; ?></p>
+        <?php } ?>
         <div class="chiprow">
           <span class="chip t-gold"><?php echo emp_name($row_get_data['emp_id']); ?></span>
           <span class="chip t-coral chip--solid"><?php echo date("d M, Y", $row_get_data['date']); ?></span>
         </div>
-         <?php if($row_get_data['banner']!=NULL && file_exists('../../../../homework/'.$row_get_data['banner'])==1){ ?> 
-          <img src="../../../../homework/<?php if($row_get_data['banner']!=NULL && file_exists('../../../../homework/'.$row_get_data['banner'])==1){echo $row_get_data['banner'];} ?>" alt=" ">
-          <?php } ?>
+         <?php echo parent_render_banner_media($row_get_data['banner'], '../../../../homework/', 'eng'); ?>
       </div>
 
 
@@ -276,11 +281,15 @@
       </button>  
       
       <div class="fold__panel">
-<?php do{ ?>
-        <a class="fold__item" href="../../../../homework/<?php echo $row_get_memo_files['file'];?>">  
-          <?php if(strtolower(pathinfo(trim($row_get_memo_files['file']), PATHINFO_EXTENSION))=='pdf'){ echo $pdf; } ?>
-          <?php if(strtolower(pathinfo(trim($row_get_memo_files['file']), PATHINFO_EXTENSION))=='doc' || strtolower(pathinfo(trim($row_get_memo_files['file']), PATHINFO_EXTENSION))=='docx' ){ echo $doc; } ?> 
-          <?php if(strtolower(pathinfo(trim($row_get_memo_files['file']), PATHINFO_EXTENSION))=='xls' || strtolower(pathinfo(trim($row_get_memo_files['file']), PATHINFO_EXTENSION))=='xlsx' ){ echo $doc; } ?> 
+<?php do{
+        $fileName = trim((string) $row_get_memo_files['file']);
+        $fileHref = parent_homework_public_url($fileName);
+        if ($fileHref === '') { continue; }
+?>
+        <a class="fold__item" href="<?php echo htmlspecialchars($fileHref, ENT_QUOTES, 'UTF-8'); ?>" rel="noopener">  
+          <?php if(strtolower(pathinfo($fileName, PATHINFO_EXTENSION))=='pdf'){ echo $pdf; } ?>
+          <?php if(strtolower(pathinfo($fileName, PATHINFO_EXTENSION))=='doc' || strtolower(pathinfo($fileName, PATHINFO_EXTENSION))=='docx' ){ echo $doc; } ?> 
+          <?php if(strtolower(pathinfo($fileName, PATHINFO_EXTENSION))=='xls' || strtolower(pathinfo($fileName, PATHINFO_EXTENSION))=='xlsx' ){ echo $doc; } ?> 
        
           <!--<span class="fold__item-title">Unit 4 worksheet.docx</span>-->
           <span class="fold__item-meta">Download</span>
@@ -382,39 +391,6 @@
   .lightbox .light__caption { display: block; font-size: 15px; }
   .lightbox .light__count { display: block; font-size: 13px; opacity: 0.7; margin-top: 4px; }
 </style>
-<div class="lightbox" id="lightbox">
-  <div class="light__backdrop"></div>
-  <div class="light__frame" id="lb-frame">
-    <button class="light__close" id="lb-close" type="button" aria-label="Close">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M18 6 6 18M6 6l12 12"/>
-      </svg>
-    </button>
-
-    <button class="light__nav light__nav--prev" id="lb-prev" type="button" aria-label="Previous">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M15 19 8 12l7-7"/>
-      </svg>
-    </button>
-
-    <div class="light__media">
-      <img id="lb-img" src="" alt="">
-      <video id="lb-video" controls playsinline></video>
-    </div>
-
-    <button class="light__nav light__nav--next" id="lb-next" type="button" aria-label="Next">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="m9 5 7 7-7 7"/>
-      </svg>
-    </button>
-
-    <div class="light__footer">
-      <span class="light__caption" id="lb-caption"></span>
-      <span class="light__count" id="lb-count"></span>
-    </div>
-  </div>
-</div>
-
 <div class="lightbox" id="lightbox">
   <div class="light__backdrop"></div>
   <div class="light__frame" id="lb-frame">

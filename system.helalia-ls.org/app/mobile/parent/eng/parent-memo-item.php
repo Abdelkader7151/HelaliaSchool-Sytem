@@ -38,7 +38,19 @@
         if($totalRows_get_data==0){
           header("Location: parent-view.php");
           exit();
-        }  
+        }
+
+        // Block opening a memo that is not for this kid's year/class.
+        $kidYear = (int) $row_get_kid_data['study_year'];
+        $kidClass = (int) $row_get_kid_data['class'];
+        $memoYear = (int) $row_get_data['study_year'];
+        $memoClassRaw = $row_get_data['class'];
+        $memoClassOk = ($memoClassRaw === null || $memoClassRaw === '' || (int) $memoClassRaw === 0 || (int) $memoClassRaw === $kidClass);
+        $memoYearOk = ($memoYear === $kidYear || $memoYear === 300);
+        if (!$memoYearOk || !$memoClassOk) {
+          header("Location: parent-memo.php?id=" . rawurlencode($kid_id));
+          exit();
+        }
 
 
        

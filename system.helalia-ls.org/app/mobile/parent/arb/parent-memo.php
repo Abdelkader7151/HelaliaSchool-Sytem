@@ -77,15 +77,29 @@
           <h2 class="sec__title">اليوم</h2>
         </div>
 
+    <?php
+      // Only this kid's year (or school-wide 300) + this class (or all-classes 0/NULL).
+      $memoYear = (int) $row_get_kid_data['study_year'];
+      $memoClass = (int) $row_get_kid_data['class'];
+      $memoTarget = "(`study_year` = '{$memoYear}' OR `study_year` = 300) AND (`class` = '{$memoClass}' OR `class` = 0 OR `class` IS NULL OR `class` = '')";
+
+      $query_get_data_today = "SELECT * FROM `memos` WHERE {$memoTarget} AND `date` >= '{$today}' AND `date` < ('{$today}' + 86400) ORDER BY `id` DESC ";
+      $get_data_today = mysqli_query($database, $query_get_data_today) or die(mysqli_error($database));
+      $row_get_data_today = mysqli_fetch_assoc($get_data_today);
+      $totalRows_get_data_today = mysqli_num_rows($get_data_today);
+
+      $query_get_data_old = "SELECT * FROM `memos` WHERE {$memoTarget} AND `date` < '{$today}' ORDER BY `id` DESC ";
+      $get_data_old = mysqli_query($database, $query_get_data_old) or die(mysqli_error($database));
+      $row_get_data_old = mysqli_fetch_assoc($get_data_old);
+      $totalRows_get_data_old = mysqli_num_rows($get_data_old);
+    ?>
+
     <div class="rows">
       <?php
-        $query_get_data_today = "SELECT * FROM `memos` WHERE `study_year` = '{$row_get_kid_data['study_year']}' AND (`class` = '{$row_get_kid_data['class']}' ||  `class` = 0 ||  `class` IS NULL )    AND `date` ='{$today}' order BY `id` desc  ";
-        $get_data_today = mysqli_query($database ,$query_get_data_today) or die(mysqli_error($database));
-        $row_get_data_today = mysqli_fetch_assoc($get_data_today);
-        $totalRows_get_data_today = mysqli_num_rows($get_data_today);
-        
         if($totalRows_get_data_today>0){
-          do{ ?> 
+          do{
+            $memoTitle = (!empty($row_get_data_today['name_arb'])) ? $row_get_data_today['name_arb'] : $row_get_data_today['name_eng'];
+            ?> 
           <a class="row t-gold" href="parent-memo-item.php?id=<?php echo $row_get_data_today['id'];?>&kid=<?php echo $row_get_kid_data['id'];?>">
             <span class="row__ico">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -93,9 +107,8 @@
                 <path d="M15 3v5h5M8 13h8M8 17h6"></path>
               </svg>
             </span>
-              <div class="row__body"> 
-           </a>
-                <p class="row__title"><?php echo $row_get_data_today['name_eng']; ?></p>
+              <div class="row__body">
+                <p class="row__title"><?php echo $memoTitle; ?></p>
                 <p class="row__meta"><?php echo date('d M Y', $row_get_data_today['date']); ?></p> 
               </div>
               <span class="chip chip--solid">حديث</span>
@@ -108,23 +121,20 @@
 
  
 
- <div class="rows">
+ <div class="rows<?php echo ($totalRows_get_data_today == 0 && $totalRows_get_data_old > 0) ? ' is-expanded' : ''; ?>">
       <?php
-        $query_get_data_old = "SELECT * FROM `memos` WHERE `study_year` = '{$row_get_kid_data['study_year']}' AND (`class` = '{$row_get_kid_data['class']}' ||  `class` = 0 ||  `class` IS NULL )   AND `date` < '{$today}' order BY `id` desc  ";
-        $get_data_old = mysqli_query($database ,$query_get_data_old) or die(mysqli_error($database));
-        $row_get_data_old = mysqli_fetch_assoc($get_data_old);
-        $totalRows_get_data_old = mysqli_num_rows($get_data_old);
-        
         if($totalRows_get_data_old >0){?>
           <div class="sec">
             <h2 class="sec__title">سابق</h2>
           </div>
       <?php
-          do{ ?>
+          do{
+            $memoTitleOld = (!empty($row_get_data_old['name_arb'])) ? $row_get_data_old['name_arb'] : $row_get_data_old['name_eng'];
+            ?>
             <a class="row t-green hw--old" href="parent-memo-item.php?id=<?php echo $row_get_data_old['id'];?>&kid=<?php echo $row_get_kid_data['id'];?>">
               <span class="row__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h8l4 4v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"></path><path d="M15 3v5h5M8 13h8M8 17h6"></path></svg></span>
               <div class="row__body">
-                <p class="row__title"><?php echo $row_get_data_old['name_eng']; ?></p>
+                <p class="row__title"><?php echo $memoTitleOld; ?></p>
                 <p class="row__meta"><?php echo date('d M Y', $row_get_data_old['date']); ?></p>
               </div>
               <!-- <span class="chip chip--solid">Done</span> -->

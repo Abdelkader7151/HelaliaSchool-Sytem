@@ -111,7 +111,7 @@
           <span class="chip t-gold"><?php echo emp_name($row_get_data['emp_id']); ?></span>
           <span class="chip t-coral chip--solid"><?php echo date("d M, Y", $row_get_data['date']); ?></span>
         </div>
-          <?php echo parent_render_banner_media($row_get_data['banner'], '../../../../homework/', 'arb'); ?>
+          <?php parent_show_banner($row_get_data['banner'], 'arb'); ?>
       </div>
 
 

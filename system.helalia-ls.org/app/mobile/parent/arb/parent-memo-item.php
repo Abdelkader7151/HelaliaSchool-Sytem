@@ -113,20 +113,18 @@
   
 <div class="card stack">
 
-        <?php
-          $memoTitle = trim((string) ((!empty($row_get_data['name_arb'])) ? $row_get_data['name_arb'] : $row_get_data['name_eng']));
-          $memoText = trim((string) ((!empty(trim((string) $row_get_data['text_arb']))) ? $row_get_data['text_arb'] : $row_get_data['text_eng']));
+        <?php // title: arb law mawgood, else eng
+          $memoTitle = (!empty($row_get_data['name_arb'])) ? $row_get_data['name_arb'] : $row_get_data['name_eng'];
         ?>
-        <h2 class="hwtitle"><?php echo htmlspecialchars($memoTitle !== '' ? $memoTitle : 'مذكرة', ENT_QUOTES, 'UTF-8'); ?></h2>
-        <?php if ($memoText !== '') { ?>
+        <h2 class="hwtitle"><?php echo $memoTitle; ?></h2>
         <p class="lede">
-         <?php echo $memoText; ?></p>
-        <?php } ?>
+         <?php echo (!empty($row_get_data['text_arb'])) ? $row_get_data['text_arb'] : $row_get_data['text_eng']; ?></p>
         <div class="chiprow">
           <span class="chip t-gold"><?php echo emp_name($row_get_data['emp_id']); ?></span>
           <span class="chip t-coral chip--solid"><?php echo date("d M, Y", $row_get_data['date']); ?></span>
         </div>
-         <?php echo parent_render_banner_media($row_get_data['banner'], '../../../../homework/', 'arb'); ?>
+         <?php // show soora aw Open file (PDF) — shof file-media.php
+               parent_show_banner($row_get_data['banner'], 'arb'); ?>
       </div>
 
 
@@ -285,15 +283,11 @@
       </button>  
       
       <div class="fold__panel">
-<?php do{
-        $fileName = trim((string) $row_get_memo_files['file']);
-        $fileHref = parent_homework_public_url($fileName);
-        if ($fileHref === '') { continue; }
-?>
-        <a class="fold__item" href="<?php echo htmlspecialchars($fileHref, ENT_QUOTES, 'UTF-8'); ?>" rel="noopener">  
-          <?php if(strtolower(pathinfo($fileName, PATHINFO_EXTENSION))=='pdf'){ echo $pdf; } ?>
-          <?php if(strtolower(pathinfo($fileName, PATHINFO_EXTENSION))=='doc' || strtolower(pathinfo($fileName, PATHINFO_EXTENSION))=='docx' ){ echo $doc; } ?> 
-          <?php if(strtolower(pathinfo($fileName, PATHINFO_EXTENSION))=='xls' || strtolower(pathinfo($fileName, PATHINFO_EXTENSION))=='xlsx' ){ echo $doc; } ?> 
+<?php do{ ?>
+        <a class="fold__item" href="../../../../homework/<?php echo $row_get_memo_files['file'];?>" target="_blank">  
+          <?php if(strtolower(pathinfo(trim($row_get_memo_files['file']), PATHINFO_EXTENSION))=='pdf'){ echo $pdf; } ?>
+          <?php if(strtolower(pathinfo(trim($row_get_memo_files['file']), PATHINFO_EXTENSION))=='doc' || strtolower(pathinfo(trim($row_get_memo_files['file']), PATHINFO_EXTENSION))=='docx' ){ echo $doc; } ?> 
+          <?php if(strtolower(pathinfo(trim($row_get_memo_files['file']), PATHINFO_EXTENSION))=='xls' || strtolower(pathinfo(trim($row_get_memo_files['file']), PATHINFO_EXTENSION))=='xlsx' ){ echo $doc; } ?> 
        
           <!--<span class="fold__item-title">Unit 4 worksheet.docx</span>-->
           <span class="fold__item-meta">تحميل</span>

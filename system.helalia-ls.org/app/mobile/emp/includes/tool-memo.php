@@ -150,6 +150,12 @@ if ($view === 'confirm') {
     exit;
 }
 
+/**
+ * staff_memo_notify
+ * Ba3d ma el teacher yerfa3 memo, eb3at OneSignal lel parents el linked.
+ * class = 0 -> kol classes fe el year | class > 0 -> class wahed bas
+ * Ma teb3atsh law preview / mafeesh sendMessage
+ */
 function staff_memo_notify($year, $class, $title)
 {
     global $database, $database_database, $staffPreview;
@@ -162,11 +168,14 @@ function staff_memo_notify($year, $class, $title)
     $year = (int) $year;
     $class = (int) $class;
     mysqli_select_db($database, $database_database);
+
+    // parents el authorized = kids linked + kids_list parent
     if ($class <= 0) {
         $sql = "SELECT `kids`.id AS `kid_id`, `kids_list`.parent_id AS `parent_id`, `app_login`.phone_id AS `phone_id` FROM `kids` RIGHT JOIN `kids_list` ON `kids`.id = `kids_list`.kid_id RIGHT JOIN `app_login` ON `app_login`.id = `kids_list`.parent_id WHERE `kids`.study_year = '{$year}' AND `kids`.linked = 1 AND `kids_list`.parent_id > 0";
     } else {
         $sql = "SELECT `kids`.id AS `kid_id`, `kids_list`.parent_id AS `parent_id`, `app_login`.phone_id AS `phone_id` FROM `kids` RIGHT JOIN `kids_list` ON `kids`.id = `kids_list`.kid_id RIGHT JOIN `app_login` ON `app_login`.id = `kids_list`.parent_id WHERE `kids`.class = '{$class}' AND `kids`.linked = 1 AND `kids_list`.parent_id > 0";
     }
+
     $message = 'Memo: ' . $title . ' is uploaded';
     $q = mysqli_query($database, $sql);
     if (!$q) {
@@ -181,6 +190,11 @@ function staff_memo_notify($year, $class, $title)
         }
     }
 }
+
+/**
+ * staff_memo_save
+ * Save memo fe DB + notify parents (law live, mesh preview)
+ */
 
 function staff_memo_save($year, $class)
 {

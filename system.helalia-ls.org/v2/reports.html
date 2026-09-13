@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Reports · HLS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="assets/css/app.css" rel="stylesheet">
+</head>
+<body data-page="reports" data-title="Reports &amp; Analytics" data-sub="Insights across staff, attendance &amp; payroll">
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="content-wrap">
+    <div id="topbar-mount"></div>
+
+    <div class="page">
+
+      <!-- Filters -->
+      <div class="d-flex gap-2 mb-3 flex-wrap">
+        <select class="form-select" style="max-width:200px;">
+          <option>This year (2026)</option><option>Last year (2025)</option><option>All time</option>
+        </select>
+        <select class="form-select" style="max-width:200px;">
+          <option>All sections</option><option>American</option><option>British</option><option>Languages</option>
+        </select>
+        <button class="btn btn-light-2 ms-auto"><i class="fa-solid fa-print me-1"></i> Print</button>
+        <button class="btn btn-light-2"><i class="fa-solid fa-file-excel me-1"></i> Export Excel</button>
+        <button class="btn btn-primary"><i class="fa-solid fa-file-pdf me-1"></i> Export PDF</button>
+      </div>
+
+      <!-- KPI summary -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon purple"><i class="fa-solid fa-users"></i></div><div class="kpi-label">Headcount</div><div class="kpi-value">30</div><span class="kpi-delta up"><i class="fa-solid fa-arrow-up"></i> +6.7% YoY</span></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon green"><i class="fa-solid fa-percent"></i></div><div class="kpi-label">Attendance rate</div><div class="kpi-value">94.2%</div><span class="kpi-delta up"><i class="fa-solid fa-arrow-up"></i> +1.4 pts</span></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon amber"><i class="fa-solid fa-calendar-day"></i></div><div class="kpi-label">Avg leaves / staff</div><div class="kpi-value">4.7</div><span class="kpi-delta flat">days YTD</span></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon blue"><i class="fa-solid fa-money-bill-wave"></i></div><div class="kpi-label">Payroll YTD</div><div class="kpi-value mono" style="font-size:22px;">EGP 1.14M</div><span class="kpi-delta up"><i class="fa-solid fa-arrow-up"></i> 4 months</span></div></div>
+      </div>
+
+      <!-- Two main charts -->
+      <div class="row g-3 mb-4">
+        <div class="col-lg-8">
+          <div class="card h-100">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">Attendance trend — last 6 months</h2>
+                <div class="card-sub">Daily average present rate, school-wide</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="bar-chart" style="height:220px;">
+                <div class="bar" style="height:88%;background:linear-gradient(to top,#10b981,#34d399)"><span class="bar-label">94%</span><span class="bar-x">Nov</span></div>
+                <div class="bar" style="height:90%;background:linear-gradient(to top,#10b981,#34d399)"><span class="bar-label">95%</span><span class="bar-x">Dec</span></div>
+                <div class="bar" style="height:86%;background:linear-gradient(to top,#10b981,#34d399)"><span class="bar-label">93%</span><span class="bar-x">Jan</span></div>
+                <div class="bar" style="height:87%;background:linear-gradient(to top,#10b981,#34d399)"><span class="bar-label">93%</span><span class="bar-x">Feb</span></div>
+                <div class="bar" style="height:91%;background:linear-gradient(to top,#10b981,#34d399)"><span class="bar-label">95%</span><span class="bar-x">Mar</span></div>
+                <div class="bar" style="height:89%;background:linear-gradient(to top,#10b981,#34d399)"><span class="bar-label">94%</span><span class="bar-x">Apr</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-4">
+          <div class="card h-100">
+            <div class="card-head">
+              <h2 class="card-title">Leave types breakdown</h2>
+            </div>
+            <div class="card-body">
+              <div class="d-flex align-items-center gap-3">
+                <div class="donut" style="background:conic-gradient(#6366f1 0deg 144deg, #3b82f6 144deg 234deg, #f59e0b 234deg 314deg, #ec4899 314deg 360deg);">
+                  <div class="donut-center">
+                    <div class="text-center">
+                      <div class="v">141</div>
+                      <div class="l">Days</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="legend mt-4">
+                <div class="legend-item"><span class="sw" style="background:#6366f1"></span><span class="nm">Annual</span><span class="vl">56</span></div>
+                <div class="legend-item"><span class="sw" style="background:#3b82f6"></span><span class="nm">Sick</span><span class="vl">35</span></div>
+                <div class="legend-item"><span class="sw" style="background:#f59e0b"></span><span class="nm">Casual</span><span class="vl">31</span></div>
+                <div class="legend-item"><span class="sw" style="background:#ec4899"></span><span class="nm">Maternity</span><span class="vl">19</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Department comparison + tenure -->
+      <div class="row g-3 mb-4">
+        <div class="col-lg-6">
+          <div class="card h-100">
+            <div class="card-head"><h2 class="card-title">Headcount by section</h2></div>
+            <div class="card-body">
+              <div class="bar-chart" style="height:180px;">
+                <div class="bar" style="height:80%;background:linear-gradient(to top,#6366f1,#818cf8);max-width:80px;"><span class="bar-label">12</span><span class="bar-x">American</span></div>
+                <div class="bar" style="height:67%;background:linear-gradient(to top,#ec4899,#f472b6);max-width:80px;"><span class="bar-label">10</span><span class="bar-x">British</span></div>
+                <div class="bar" style="height:54%;background:linear-gradient(to top,#10b981,#34d399);max-width:80px;"><span class="bar-label">8</span><span class="bar-x">Languages</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="card h-100">
+            <div class="card-head"><h2 class="card-title">Tenure distribution</h2></div>
+            <div class="card-body">
+              <div class="d-flex flex-column gap-3 pt-2">
+                ${[
+                  { label:'< 1 year', count:5, pct:17 },
+                  { label:'1–3 years', count:11, pct:37 },
+                  { label:'3–5 years', count:9, pct:30 },
+                  { label:'5+ years', count:5, pct:17 }
+                ].map ? '' : ''}
+                <div>
+                  <div class="d-flex justify-content-between small mb-1"><span class="muted">&lt; 1 year</span><span class="fw-semibold">5 (17%)</span></div>
+                  <div class="progress" style="height:8px;"><div class="progress-bar" style="width:17%;background:#6366f1;"></div></div>
+                </div>
+                <div>
+                  <div class="d-flex justify-content-between small mb-1"><span class="muted">1–3 years</span><span class="fw-semibold">11 (37%)</span></div>
+                  <div class="progress" style="height:8px;"><div class="progress-bar" style="width:37%;background:#6366f1;"></div></div>
+                </div>
+                <div>
+                  <div class="d-flex justify-content-between small mb-1"><span class="muted">3–5 years</span><span class="fw-semibold">9 (30%)</span></div>
+                  <div class="progress" style="height:8px;"><div class="progress-bar" style="width:30%;background:#6366f1;"></div></div>
+                </div>
+                <div>
+                  <div class="d-flex justify-content-between small mb-1"><span class="muted">5+ years</span><span class="fw-semibold">5 (17%)</span></div>
+                  <div class="progress" style="height:8px;"><div class="progress-bar" style="width:17%;background:#6366f1;"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Saved reports -->
+      <div class="card">
+        <div class="card-head">
+          <h2 class="card-title">Saved reports</h2>
+          <button class="btn btn-light-2 btn-sm"><i class="fa-solid fa-plus me-1"></i> New report</button>
+        </div>
+        <div class="table-wrap" style="border:none;border-radius:0 0 12px 12px;">
+          <table class="table mb-0">
+            <thead>
+              <tr><th>Report</th><th>Type</th><th>Last run</th><th>Schedule</th><th class="num"></th></tr>
+            </thead>
+            <tbody>
+              <tr><td><i class="fa-solid fa-chart-column text-primary me-2"></i><strong>Monthly attendance summary</strong></td><td><span class="pill info">Attendance</span></td><td class="mono small">2026-04-28</td><td><span class="pill muted">Monthly</span></td><td class="num"><button class="btn btn-icon btn-light-2"><i class="fa-solid fa-play"></i></button> <button class="btn btn-icon btn-light-2"><i class="fa-solid fa-download"></i></button></td></tr>
+              <tr><td><i class="fa-solid fa-money-bill-wave text-success me-2"></i><strong>Payroll register</strong></td><td><span class="pill ok">Payroll</span></td><td class="mono small">2026-04-28</td><td><span class="pill muted">Monthly</span></td><td class="num"><button class="btn btn-icon btn-light-2"><i class="fa-solid fa-play"></i></button> <button class="btn btn-icon btn-light-2"><i class="fa-solid fa-download"></i></button></td></tr>
+              <tr><td><i class="fa-solid fa-calendar text-warning me-2"></i><strong>Leave balances</strong></td><td><span class="pill warn">Leaves</span></td><td class="mono small">2026-04-25</td><td><span class="pill muted">Quarterly</span></td><td class="num"><button class="btn btn-icon btn-light-2"><i class="fa-solid fa-play"></i></button> <button class="btn btn-icon btn-light-2"><i class="fa-solid fa-download"></i></button></td></tr>
+              <tr><td><i class="fa-solid fa-users text-purple me-2"></i><strong>Headcount by section</strong></td><td><span class="pill purple">Staff</span></td><td class="mono small">2026-04-01</td><td><span class="pill muted">On demand</span></td><td class="num"><button class="btn btn-icon btn-light-2"><i class="fa-solid fa-play"></i></button> <button class="btn btn-icon btn-light-2"><i class="fa-solid fa-download"></i></button></td></tr>
+              <tr><td><i class="fa-solid fa-stopwatch text-danger me-2"></i><strong>Late arrivals</strong></td><td><span class="pill info">Attendance</span></td><td class="mono small">2026-04-22</td><td><span class="pill muted">Weekly</span></td><td class="num"><button class="btn btn-icon btn-light-2"><i class="fa-solid fa-play"></i></button> <button class="btn btn-icon btn-light-2"><i class="fa-solid fa-download"></i></button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/permissions.js"></script>
+<script src="assets/js/shell.js"></script>
+</body>
+</html>

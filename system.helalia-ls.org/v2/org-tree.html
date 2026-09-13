@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Org chart · HLS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="assets/css/app.css" rel="stylesheet">
+<style>
+  .levels-bar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .level-chip { display:inline-flex; align-items:center; gap:8px; background:#fff; border:1.5px solid var(--line); border-radius:12px; padding:7px 12px; }
+  .level-chip .dot { width:10px; height:10px; border-radius:50%; }
+  .level-chip input { border:none; background:none; font-family:inherit; font-weight:700; font-size:13px; color:var(--ink); width:96px; outline:none; }
+  .level-chip input:focus { border-bottom:1.5px solid var(--primary); }
+
+  /* tree */
+  .tree { --indent: 30px; }
+  .node-row { display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px solid var(--line); border-radius:14px; background:#fff; margin-bottom:8px; transition:.12s; }
+  .node-row:hover { border-color:var(--primary); box-shadow:0 2px 10px rgba(99,102,241,.08); }
+  .node-wrap { position:relative; }
+  .node-children { margin-inline-start: var(--indent); padding-inline-start: 16px; border-inline-start:2px dashed var(--line); }
+  .twirl { width:22px; height:22px; border-radius:6px; border:none; background:var(--line-2); color:var(--ink-2); cursor:pointer; display:grid; place-items:center; font-size:11px; flex-shrink:0; }
+  .twirl.leaf { visibility:hidden; }
+  .node-av { width:42px; height:42px; border-radius:50%; display:grid; place-items:center; font-weight:700; font-size:14px; flex-shrink:0; }
+  .node-main { flex:1; min-width:0; }
+  .node-name { font-weight:700; font-size:14px; }
+  .node-role { font-size:12px; color:var(--ink-3); }
+  .level-badge { font-size:10px; font-weight:800; padding:3px 9px; border-radius:999px; text-transform:uppercase; letter-spacing:.03em; color:#fff; }
+  .reports-pill { font-size:11px; font-weight:700; color:var(--ink-3); background:var(--line-2); border-radius:999px; padding:3px 9px; }
+  .node-actions { display:flex; gap:4px; }
+</style>
+</head>
+<body data-page="org-tree" data-title="Org chart" data-sub="الهيكل التنظيمي — levels, reporting & access">
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="content-wrap">
+    <div id="topbar-mount"></div>
+
+    <div class="page">
+
+      <div class="card mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div><div class="card-title">Position levels — مسميات المستويات</div>
+            <div class="card-sub">Rename any level — labels apply across the tree</div></div>
+          <button class="btn btn-light-2 btn-sm" data-perm="edit" onclick="resetLevels()"><i class="fa-solid fa-rotate-left me-1"></i> Reset labels</button>
+        </div>
+        <div class="levels-bar" id="levels-bar"></div>
+      </div>
+
+      <div class="page-head">
+        <div class="d-flex gap-2 align-items-center">
+          <span style="font-weight:600;">Reporting hierarchy — التسلسل الإداري</span>
+          <span class="pill info" id="emp-count"></span>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-light-2" onclick="expandAll(true)"><i class="fa-solid fa-angles-down me-1"></i> Expand</button>
+          <button class="btn btn-light-2" onclick="expandAll(false)"><i class="fa-solid fa-angles-up me-1"></i> Collapse</button>
+        </div>
+      </div>
+
+      <div class="tree" id="tree"></div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===== Assign / edit node modal ===== -->
+<div class="modal fade" id="nodeModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div><div class="card-title" id="nm-title">Edit position</div><div class="card-sub">المنصب والتبعية الإدارية</div></div>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="n-id">
+        <div class="mb-3"><label class="form-label">Employee</label><input class="form-control" id="n-name" disabled></div>
+        <div class="row g-3">
+          <div class="col-md-7"><label class="form-label">Position title — المسمى الوظيفي</label><input class="form-control" id="n-role" placeholder="e.g. Senior Math Teacher"></div>
+          <div class="col-md-5"><label class="form-label">Level — المستوى</label><select class="form-select" id="n-level"></select></div>
+          <div class="col-12"><label class="form-label">Reports to (manager) — يتبع</label><select class="form-select" id="n-manager"></select></div>
+        </div>
+        <div class="note mt-3" style="background:var(--primary-soft);border-radius:11px;padding:11px 13px;font-size:12.5px;color:var(--ink-2);display:flex;gap:9px;align-items:flex-start;">
+          <i class="fa-solid fa-shield-halved" style="color:var(--primary);margin-top:2px;"></i>
+          <span id="n-access">The manager will be able to view this employee's records.</span>
+        </div>
+        <div class="text-danger small mt-2" id="n-err" style="display:none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light-2" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" onclick="saveNode()"><i class="fa-solid fa-check me-1"></i> Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Reports / access drawer modal ===== -->
+<div class="modal fade" id="accessModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div><div class="card-title" id="ac-title">Team access</div><div class="card-sub" id="ac-sub"></div></div>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="ac-body"></div>
+      <div class="modal-footer"><button class="btn btn-light-2" data-bs-dismiss="modal">Close</button></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/permissions.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+// ---------- editable levels ----------
+const LV_KEY = 'liberty_org_levels';
+const ORG_KEY = 'liberty_org_overrides';   // { empId: { role, level, manager } }
+const COLLAPSE_KEY = 'liberty_org_collapsed';
+const DEFAULT_LEVELS = [
+  { key: 'director',  label: 'Director',  color: '#6d28d9' },
+  { key: 'manager',   label: 'Manager',   color: '#1d4ed8' },
+  { key: 'lead',      label: 'Team Lead', color: '#0e7490' },
+  { key: 'senior',    label: 'Senior',    color: '#047857' },
+  { key: 'mid',       label: 'Mid-level', color: '#b45309' },
+  { key: 'junior',    label: 'Junior',    color: '#be185d' }
+];
+const readJSON = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (_) { return d; } };
+let levels = readJSON(LV_KEY, null) || JSON.parse(JSON.stringify(DEFAULT_LEVELS));
+let org = readJSON(ORG_KEY, {});
+let collapsed = readJSON(COLLAPSE_KEY, {});
+
+const saveLevels = () => localStorage.setItem(LV_KEY, JSON.stringify(levels));
+const saveOrg = () => localStorage.setItem(ORG_KEY, JSON.stringify(org));
+const saveCollapse = () => localStorage.setItem(COLLAPSE_KEY, JSON.stringify(collapsed));
+const levelOf = key => levels.find(l => l.key === key) || { label: '—', color: '#94a3b8' };
+
+// effective employee record (seed + overrides)
+function emp(id) {
+  const base = LIBERTY.employees.find(e => e.id === id);
+  const o = org[id] || {};
+  return { ...base, role: o.role ?? base.role, level: o.level ?? guessLevel(base), manager: o.manager ?? base.manager };
+}
+function guessLevel(e) {
+  const r = (e.role || '').toLowerCase();
+  if (e.manager === '—') return 'director';
+  if (r.includes('head')) return 'manager';
+  if (r.includes('coordinator')) return 'lead';
+  if (r.includes('senior')) return 'senior';
+  return 'mid';
+}
+const allEmps = () => LIBERTY.employees.map(e => emp(e.id));
+const childrenOf = name => allEmps().filter(e => e.manager === name);
+const roots = () => allEmps().filter(e => !e.manager || e.manager === '—' || !LIBERTY.employees.some(x => x.name === e.manager));
+
+const empColor = ['blue', 'green', 'amber', 'purple', 'pink'];
+const colorFor = id => empColor[id % empColor.length];
+
+// ---------- render levels bar ----------
+function renderLevels() {
+  document.getElementById('levels-bar').innerHTML = levels.map((l, i) => `
+    <div class="level-chip">
+      <span class="dot" style="background:${l.color}"></span>
+      <input value="${l.label}" data-i="${i}" maxlength="18">
+    </div>`).join('');
+  document.querySelectorAll('.levels-bar input').forEach(inp => {
+    inp.addEventListener('change', function () {
+      levels[parseInt(this.dataset.i)].label = this.value.trim() || 'Level';
+      saveLevels(); renderTree();
+    });
+  });
+}
+function resetLevels() { levels = JSON.parse(JSON.stringify(DEFAULT_LEVELS)); saveLevels(); renderLevels(); renderTree(); }
+
+// ---------- render tree ----------
+function nodeHTML(e, depth) {
+  const kids = childrenOf(e.name);
+  const lv = levelOf(e.level);
+  const isCollapsed = collapsed[e.id];
+  const canEdit = !window.LIBERTY.can || LIBERTY.can('edit', 'HR');
+  return `
+    <div class="node-wrap">
+      <div class="node-row">
+        <button class="twirl ${kids.length ? '' : 'leaf'}" onclick="toggle(${e.id})">
+          <i class="fa-solid fa-chevron-${isCollapsed ? 'right' : 'down'}"></i></button>
+        <div class="node-av ${colorFor(e.id)}">${LIBERTY.initials(e.name)}</div>
+        <div class="node-main">
+          <div class="node-name">${e.name}</div>
+          <div class="node-role">${e.role} · ${e.dept}</div>
+        </div>
+        <span class="level-badge" style="background:${lv.color}">${lv.label}</span>
+        ${kids.length ? `<span class="reports-pill" title="Direct reports" onclick="showAccess(${e.id})" style="cursor:pointer"><i class="fa-solid fa-users" style="font-size:9px"></i> ${kids.length}</span>` : ''}
+        <div class="node-actions">
+          ${canEdit ? `<button class="btn-icon" title="Edit position" onclick="openNode(${e.id})"><i class="fa-solid fa-pen"></i></button>` : ''}
+          <button class="btn-icon" title="Team access" onclick="showAccess(${e.id})"><i class="fa-solid fa-shield-halved"></i></button>
+        </div>
+      </div>
+      ${kids.length && !isCollapsed ? `<div class="node-children">${kids.map(k => nodeHTML(k, depth + 1)).join('')}</div>` : ''}
+    </div>`;
+}
+function renderTree() {
+  document.getElementById('tree').innerHTML = roots().map(r => nodeHTML(r, 0)).join('');
+  document.getElementById('emp-count').textContent = LIBERTY.employees.length + ' employees';
+}
+function toggle(id) { collapsed[id] = !collapsed[id]; saveCollapse(); renderTree(); }
+function expandAll(open) {
+  collapsed = {};
+  if (!open) allEmps().forEach(e => { if (childrenOf(e.name).length) collapsed[e.id] = true; });
+  saveCollapse(); renderTree();
+}
+
+// ---------- edit node ----------
+let nodeModal, accessModal;
+function openNode(id) {
+  const e = emp(id);
+  document.getElementById('n-id').value = id;
+  document.getElementById('n-name').value = e.name;
+  document.getElementById('n-role').value = e.role;
+  document.getElementById('n-level').innerHTML = levels.map(l => `<option value="${l.key}"${l.key === e.level ? ' selected' : ''}>${l.label}</option>`).join('');
+  // manager options = everyone except self & own descendants
+  const banned = descendants(e.name); banned.add(e.name);
+  const opts = ['<option value="—">— (top level)</option>'].concat(
+    allEmps().filter(x => !banned.has(x.name)).map(x => `<option value="${x.name}"${x.name === e.manager ? ' selected' : ''}>${x.name} · ${x.role}</option>`));
+  document.getElementById('n-manager').innerHTML = opts.join('');
+  updateAccessNote();
+  document.getElementById('n-manager').onchange = updateAccessNote;
+  document.getElementById('n-err').style.display = 'none';
+  nodeModal.show();
+}
+function updateAccessNote() {
+  const mgr = document.getElementById('n-manager').value;
+  document.getElementById('n-access').innerHTML = mgr === '—'
+    ? 'Top-level position — reports to no one.'
+    : `<b>${mgr}</b> will be able to view this employee's records (as their manager).`;
+}
+function descendants(name) {
+  const set = new Set();
+  (function walk(n) { childrenOf(n).forEach(c => { if (!set.has(c.name)) { set.add(c.name); walk(c.name); } }); })(name);
+  return set;
+}
+function saveNode() {
+  const id = parseInt(document.getElementById('n-id').value);
+  const role = document.getElementById('n-role').value.trim();
+  if (!role) { const er = document.getElementById('n-err'); er.textContent = 'Position title is required.'; er.style.display = 'block'; return; }
+  org[id] = { role, level: document.getElementById('n-level').value, manager: document.getElementById('n-manager').value };
+  saveOrg(); nodeModal.hide(); renderTree();
+}
+
+// ---------- team access ----------
+function showAccess(id) {
+  const e = emp(id);
+  const team = descendants(e.name);
+  document.getElementById('ac-title').textContent = e.name + ' · team access';
+  document.getElementById('ac-sub').textContent = `${e.role} — can view ${team.size} subordinate record${team.size === 1 ? '' : 's'}`;
+  const direct = childrenOf(e.name);
+  document.getElementById('ac-body').innerHTML = team.size === 0
+    ? '<div class="text-center muted" style="padding:24px">No subordinates — this employee manages no one.</div>'
+    : `<div class="note" style="background:var(--primary-soft);border-radius:11px;padding:11px 13px;font-size:12.5px;color:var(--ink-2);margin-bottom:14px;display:flex;gap:9px;">
+         <i class="fa-solid fa-shield-halved" style="color:var(--primary);margin-top:2px;"></i>
+         <span>As a manager, <b>${e.name}</b> can access the HR information of everyone in their reporting line below.</span></div>` +
+      allEmps().filter(x => team.has(x.name)).map(x => {
+        const isDirect = direct.some(d => d.id === x.id);
+        const lv = levelOf(x.level);
+        return `<div class="d-flex align-items-center gap-3 py-2" style="border-bottom:1px solid var(--line-2)">
+          <div class="node-av ${colorFor(x.id)}" style="width:36px;height:36px;font-size:12px">${LIBERTY.initials(x.name)}</div>
+          <div style="flex:1"><div style="font-weight:600">${x.name}</div><div class="muted small">${x.role} · ${x.dept}</div></div>
+          <span class="level-badge" style="background:${lv.color}">${lv.label}</span>
+          ${isDirect ? '<span class="reports-pill">direct</span>' : '<span class="reports-pill" style="opacity:.6">indirect</span>'}
+        </div>`;
+      }).join('');
+  accessModal.show();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    if (!document.getElementById('tree')) return;
+    nodeModal = new bootstrap.Modal('#nodeModal');
+    accessModal = new bootstrap.Modal('#accessModal');
+    renderLevels();
+    renderTree();
+  }, 0);
+});
+</script>
+</body>
+</html>

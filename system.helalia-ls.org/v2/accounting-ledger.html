@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>General accounting · HLS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="assets/css/app.css" rel="stylesheet">
+</head>
+<body data-page="acct-ledger" data-title="General accounting" data-sub="الحركة — General journal · May 2026">
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="content-wrap">
+    <div id="topbar-mount"></div>
+
+    <div class="page">
+
+      <div class="tabs-nav mb-4" id="books">
+        <a href="accounting-ledger.html" class="active">Ledger · الحركة</a>
+        <a href="accounting-treasury.html">Treasury · الخزنة</a>
+        <a href="accounting-bank.html">Bank · البنك</a>
+        <a href="student-fees.html">Student fees · مصاريف الطلبة</a>
+        <a href="bus-fees.html">Bus fees · رسوم الباص</a>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon blue"><i class="fa-solid fa-right-to-bracket"></i></div><div class="kpi-label">Total debit</div><div class="kpi-value mono" id="k-dr" style="font-size:21px;">EGP 0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon purple"><i class="fa-solid fa-right-from-bracket"></i></div><div class="kpi-label">Total credit</div><div class="kpi-value mono" id="k-cr" style="font-size:21px;">EGP 0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon green"><i class="fa-solid fa-file-invoice"></i></div><div class="kpi-label">Vouchers</div><div class="kpi-value" id="k-v">0</div></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon amber"><i class="fa-solid fa-scale-balanced"></i></div><div class="kpi-label">Balance</div><div class="kpi-value" id="k-bal" style="font-size:21px;">—</div></div></div>
+      </div>
+
+      <div class="page-head">
+        <div class="d-flex gap-2 align-items-center">
+          <span style="font-weight:600;">General journal — دفتر اليومية</span>
+          <span class="pill ok">Posted</span>
+        </div>
+        <div class="d-flex gap-2">
+          <select class="form-select" style="max-width:160px;"><option>May 2026</option><option>April 2026</option></select>
+          <button class="btn btn-primary" onclick="openVoucher()"><i class="fa-solid fa-plus me-1"></i> Record voucher</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table mb-0 align-middle">
+          <thead>
+            <tr>
+              <th style="width:46%;">Account — الحساب</th>
+              <th class="num">Debit (مدين)</th>
+              <th class="num">Credit (دائن)</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+          <tfoot id="tfoot"></tfoot>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Record voucher modal -->
+<div class="modal fade" id="vModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div><div class="card-title">Record journal voucher</div>
+          <div class="card-sub">قيد يومية — debit must equal credit</div></div>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3 mb-3">
+          <div class="col-5"><label class="form-label">Date</label><input type="date" class="form-control" id="v-date" value="2026-05-28"></div>
+          <div class="col-7"><label class="form-label">Description — البيان</label><input type="text" class="form-control" id="v-desc" placeholder="e.g. Electricity bill — May"></div>
+        </div>
+        <label class="form-label">Entry lines</label>
+        <div class="vline" style="margin-bottom:4px;">
+          <div class="muted small">Account</div><div class="muted small text-end">Debit</div><div class="muted small text-end">Credit</div><div></div>
+        </div>
+        <div id="vlines"></div>
+        <button class="btn btn-light-2 btn-sm mt-1" onclick="addLine()"><i class="fa-solid fa-plus me-1"></i> Add line</button>
+
+        <div class="vbal mt-3">
+          <span>Total debit: <span class="vb-num" id="v-dr" style="color:var(--info);">EGP 0</span></span>
+          <span>Total credit: <span class="vb-num" id="v-cr" style="color:var(--primary);">EGP 0</span></span>
+          <span class="ms-auto" id="v-status"><span class="pill warn">Not balanced</span></span>
+        </div>
+        <div class="text-danger small mt-2" id="v-err" style="display:none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light-2" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" id="v-post" onclick="postVoucher()" disabled><i class="fa-solid fa-check me-1"></i> Post voucher</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/payroll.js"></script>
+<script src="assets/js/permissions.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+const KEY = 'liberty_ledger_vouchers';
+let vModal, vlines = [];
+
+const stored = () => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (_) { return []; } };
+const saveStored = a => localStorage.setItem(KEY, JSON.stringify(a));
+
+function seedVouchers() {
+  const net = PAYROLL.totals().net, j = PAYROLL.journal();
+  return [
+    { no: 'JV-2026-05-0411', date: '2026-05-03', desc: 'Tuition fees collected', src: 'Accounting',
+      lines: [ { acct: '1101 · Bank — CIB', dr: 480000, cr: 0 }, { acct: '4101 · Tuition revenue', dr: 0, cr: 480000 } ] },
+    { no: 'JV-2026-05-0415', date: '2026-05-10', desc: 'Office rent — May', src: 'Accounting',
+      lines: [ { acct: '5201 · Rent expense', dr: 60000, cr: 0 }, { acct: '1101 · Bank — CIB', dr: 0, cr: 60000 } ] },
+    { no: 'JV-2026-05-0418', date: '2026-05-28', desc: 'Payroll accrual — May (auto from payroll)', src: 'Payroll · auto',
+      lines: j.accrual.debit.map(l => ({ acct: l.acct + ' · ' + l.name, dr: l.amt, cr: 0 }))
+        .concat(j.accrual.credit.map(l => ({ acct: l.acct + ' · ' + l.name, dr: 0, cr: l.amt }))) },
+    { no: 'JV-2026-05-0419', date: '2026-05-28', desc: 'Salaries paid via bank', src: 'Payroll · auto',
+      lines: [ { acct: '2101 · Employees payable', dr: net, cr: 0 }, { acct: '1101 · Bank — CIB', dr: 0, cr: net } ] }
+  ];
+}
+
+function allVouchers() {
+  const seed = seedVouchers();
+  const user = stored().map(v => ({ ...v, user: true }));
+  return seed.concat(user).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a.no < b.no ? -1 : 1);
+}
+
+function render() {
+  const vouchers = allVouchers();
+  let totDr = 0, totCr = 0;
+  document.getElementById('tbody').innerHTML = vouchers.map(v => {
+    const vDr = v.lines.reduce((s, l) => s + l.dr, 0), vCr = v.lines.reduce((s, l) => s + l.cr, 0);
+    totDr += vDr; totCr += vCr;
+    const head = `
+      <tr style="background:var(--line-2);">
+        <td colspan="3" style="padding-top:12px;">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="mono" style="font-weight:700;color:var(--ink);">${v.no}</span>
+            <span class="muted small">${v.date}</span>
+            <span style="font-weight:600;">${v.desc}</span>
+            ${v.user ? '<span class="pill ok">New</span>' : ''}
+            <span class="pill ${v.src.includes('auto') ? 'info' : 'muted'} ms-auto">${v.src}</span>
+          </div>
+        </td>
+      </tr>`;
+    const lines = v.lines.map(l => `
+      <tr>
+        <td style="${l.cr > 0 ? 'padding-left:40px;' : ''}">
+          <span class="${l.dr > 0 ? 'dr-badge' : 'cr-badge'}">${l.dr > 0 ? 'DR' : 'CR'}</span> ${l.acct}
+        </td>
+        <td class="num mono">${l.dr > 0 ? LIBERTY.money(l.dr) : ''}</td>
+        <td class="num mono">${l.cr > 0 ? LIBERTY.money(l.cr) : ''}</td>
+      </tr>`).join('');
+    return head + lines;
+  }).join('');
+  document.getElementById('tfoot').innerHTML = `
+    <tr style="border-top:2px solid var(--line);">
+      <td style="font-weight:700;">Totals — balanced ✓</td>
+      <td class="num mono fw-bold">${LIBERTY.money(totDr)}</td>
+      <td class="num mono fw-bold">${LIBERTY.money(totCr)}</td>
+    </tr>`;
+  document.getElementById('k-dr').textContent = LIBERTY.money(totDr);
+  document.getElementById('k-cr').textContent = LIBERTY.money(totCr);
+  document.getElementById('k-v').textContent  = vouchers.length;
+  document.getElementById('k-bal').innerHTML   = '<span class="pill ok" style="font-size:13px;">Balanced</span>';
+}
+
+// ---- voucher form ----
+function renderLines() {
+  document.getElementById('vlines').innerHTML = vlines.map((l, i) => `
+    <div class="vline">
+      <input class="form-control" placeholder="e.g. 5202 · Utilities expense" value="${l.acct.replace(/"/g, '&quot;')}" oninput="updateLine(${i},'acct',this.value)">
+      <input type="number" class="form-control mono text-end" placeholder="0" value="${l.dr || ''}" oninput="updateLine(${i},'dr',this.value)">
+      <input type="number" class="form-control mono text-end" placeholder="0" value="${l.cr || ''}" oninput="updateLine(${i},'cr',this.value)">
+      <button class="v-rm" onclick="removeLine(${i})" title="Remove"><i class="fa-solid fa-xmark"></i></button>
+    </div>`).join('');
+}
+function updateLine(i, field, val) {
+  vlines[i][field] = field === 'acct' ? val : (parseFloat(val) || 0);
+  recalc();
+}
+function addLine() { vlines.push({ acct: '', dr: 0, cr: 0 }); renderLines(); recalc(); }
+function removeLine(i) { if (vlines.length > 2) { vlines.splice(i, 1); renderLines(); recalc(); } }
+function recalc() {
+  const dr = vlines.reduce((s, l) => s + (l.dr || 0), 0);
+  const cr = vlines.reduce((s, l) => s + (l.cr || 0), 0);
+  document.getElementById('v-dr').textContent = LIBERTY.money(dr);
+  document.getElementById('v-cr').textContent = LIBERTY.money(cr);
+  const balanced = dr === cr && dr > 0;
+  document.getElementById('v-status').innerHTML = balanced
+    ? '<span class="pill ok">Balanced ✓</span>'
+    : `<span class="pill warn">Diff ${LIBERTY.money(Math.abs(dr - cr))}</span>`;
+  document.getElementById('v-post').disabled = !balanced;
+}
+function openVoucher() {
+  vlines = [{ acct: '', dr: 0, cr: 0 }, { acct: '', dr: 0, cr: 0 }];
+  document.getElementById('v-desc').value = '';
+  document.getElementById('v-err').style.display = 'none';
+  renderLines(); recalc();
+  vModal.show();
+}
+function postVoucher() {
+  const date = document.getElementById('v-date').value;
+  const desc = document.getElementById('v-desc').value.trim();
+  const err = document.getElementById('v-err');
+  const lines = vlines.filter(l => l.acct.trim() && (l.dr > 0 || l.cr > 0))
+                      .map(l => ({ acct: l.acct.trim(), dr: l.dr || 0, cr: l.cr || 0 }));
+  const dr = lines.reduce((s, l) => s + l.dr, 0), cr = lines.reduce((s, l) => s + l.cr, 0);
+  if (!date || !desc) { err.textContent = 'Enter a date and description.'; err.style.display = 'block'; return; }
+  if (lines.length < 2 || dr !== cr || dr <= 0) { err.textContent = 'Need at least two lines and debit must equal credit.'; err.style.display = 'block'; return; }
+  const list = stored();
+  const seq = 420 + list.length;
+  list.push({ no: 'JV-2026-05-' + String(seq).padStart(4, '0'), date, desc, src: 'Manual', lines });
+  saveStored(list);
+  render();
+  vModal.hide();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  vModal = new bootstrap.Modal('#vModal');
+  render();
+});
+</script>
+</body>
+</html>

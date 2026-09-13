@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Attendance · HLS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="assets/css/app.css" rel="stylesheet">
+</head>
+<body data-page="attendance" data-title="Attendance" data-sub="Weekly view · April 26 – May 02, 2026">
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="content-wrap">
+    <div id="topbar-mount"></div>
+
+    <div class="page">
+
+      <!-- Stat row -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon green"><i class="fa-solid fa-check"></i></div><div class="kpi-label">Present today</div><div class="kpi-value">27</div><span class="kpi-delta up">90% rate</span></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon amber"><i class="fa-solid fa-clock"></i></div><div class="kpi-label">Late today</div><div class="kpi-value">2</div><span class="kpi-delta flat">avg 18 min</span></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon blue"><i class="fa-solid fa-plane-departure"></i></div><div class="kpi-label">On leave</div><div class="kpi-value">1</div><span class="kpi-delta flat">approved</span></div></div>
+        <div class="col-md-3"><div class="kpi"><div class="kpi-icon"><i class="fa-solid fa-xmark" style="color:var(--err)"></i></div><div class="kpi-label">Absent</div><div class="kpi-value">0</div><span class="kpi-delta flat">no records</span></div></div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="d-flex align-items-center mb-3 gap-2 flex-wrap">
+        <div class="btn-group" role="group">
+          <button class="btn btn-light-2"><i class="fa-solid fa-chevron-left"></i></button>
+          <button class="btn btn-light-2 fw-medium">This week</button>
+          <button class="btn btn-light-2"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+        <select class="form-select" style="max-width:200px;">
+          <option>All sections</option>
+          <option>American</option>
+          <option>British</option>
+          <option>Languages</option>
+        </select>
+        <div class="muted small ms-2">
+          <span class="me-3"><span class="d-inline-block rounded-circle bg-success" style="width:9px;height:9px;"></span> Present</span>
+          <span class="me-3"><span class="d-inline-block rounded-circle bg-warning" style="width:9px;height:9px;"></span> Late</span>
+          <span class="me-3"><span class="d-inline-block rounded-circle bg-info" style="width:9px;height:9px;"></span> On leave</span>
+          <span class="me-3"><span class="d-inline-block rounded-circle bg-danger" style="width:9px;height:9px;"></span> Absent</span>
+          <span class="me-3"><span class="d-inline-block rounded-circle" style="width:9px;height:9px;background:var(--ink-4);"></span> Off-day</span>
+        </div>
+        <a href="attendance-form.html" class="btn btn-primary ms-auto"><i class="fa-solid fa-plus me-1"></i> Manual entry</a>
+      </div>
+
+      <!-- Grid -->
+      <div class="att-grid" id="att-grid" style="grid-template-columns: 240px repeat(7, 1fr);"></div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/permissions.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const grid = document.getElementById('att-grid');
+  let html = '<div class="h">Employee</div>' + LIBERTY.attendance.days.map(d => `<div class="h">${d}</div>`).join('');
+  LIBERTY.attendance.rows.forEach(row => {
+    html += `<div class="c name">${row.name}</div>`;
+    row.cells.forEach(cell => {
+      const [code, time] = cell.split(':').length > 1 ? [cell.split(':')[0], cell.substring(cell.indexOf(':')+1)] : [cell, ''];
+      const map = { p:{icon:'fa-check',cls:'p',l:'In'}, l:{icon:'fa-clock',cls:'l',l:'Late'}, a:{icon:'fa-xmark',cls:'a',l:'Abs'}, lv:{icon:'fa-plane',cls:'lv',l:'Leave'}, o:{icon:'fa-moon',cls:'o',l:'Off'} };
+      const m = map[code] || map.o;
+      html += `<div class="c"><div class="att-cell"><div class="icon ${m.cls}"><i class="fa-solid ${m.icon}"></i></div>${time ? `<span class="time">${time}</span>` : ''}</div></div>`;
+    });
+  });
+  grid.innerHTML = html;
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+---
+# Manual deploy only. Run from cPanel Git Version Control -> Deploy.
+# Copies into live docroots without deleting server-only storage folders.
+deployment:
+  tasks:
+    - /bin/cp -R /home/helalia/helalia-school-system/system.helalia-ls.org/. /home/helalia/system.helalia-ls.org/
+    - /bin/cp -R /home/helalia/helalia-school-system/public_html/. /home/helalia/public_html/

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Permissions · HLS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="assets/css/app.css" rel="stylesheet">
+<style>
+  .perm-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+  .perm-table th, .perm-table td { padding: 12px 14px; border-bottom: 1px solid var(--line-2); }
+  .perm-table thead th { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-3); text-align: center; }
+  .perm-table thead th.sec { text-align: start; }
+  .perm-sec { display: flex; align-items: center; gap: 11px; }
+  .perm-sec .ic { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; font-size: 15px; background: var(--primary-soft); color: var(--primary); flex-shrink: 0; }
+  .perm-sec .nm { font-weight: 700; font-size: 14px; }
+  .perm-sec .ds { font-size: 11.5px; color: var(--ink-3); }
+  .act-group { display: flex; gap: 18px; justify-content: center; }
+  .pchk { display: inline-flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; }
+  .pchk input { width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer; }
+  .pchk span { font-size: 10.5px; font-weight: 700; color: var(--ink-3); }
+  .pchk.del input { accent-color: var(--err); }
+  .urow { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; border-bottom: 1px solid var(--line-2); }
+  .urow:hover { background: var(--line-2); }
+  .urow.active { background: var(--primary-soft); }
+  .urow:last-child { border-bottom: none; }
+  .urow .av { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+  .role-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .03em; }
+</style>
+</head>
+<body data-page="permissions" data-title="Permissions" data-sub="الصلاحيات — access control per user & section">
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="content-wrap">
+    <div id="topbar-mount"></div>
+
+    <div class="page">
+
+      <div class="note-row mb-4" style="display:flex;gap:10px;align-items:flex-start;background:var(--primary-soft);border-radius:12px;padding:13px 15px;font-size:13px;color:var(--ink-2);">
+        <i class="fa-solid fa-shield-halved" style="color:var(--primary);margin-top:2px;"></i>
+        <span>Pick a user on the left, then grant <b>View</b>, <b>Edit</b> and <b>Delete</b> per section. Changes save instantly and apply everywhere. <b>Edit</b>/<b>Delete</b> require <b>View</b>.</span>
+      </div>
+
+      <div class="row g-3">
+        <!-- users -->
+        <div class="col-lg-4">
+          <div class="table-wrap">
+            <div style="padding:14px 16px;border-bottom:1px solid var(--line);font-weight:700;">Users — المستخدمون</div>
+            <div id="user-list"></div>
+          </div>
+        </div>
+
+        <!-- matrix -->
+        <div class="col-lg-8">
+          <div class="table-wrap">
+            <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap;">
+              <div class="av" id="sel-av" style="width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:700;"></div>
+              <div style="flex:1;min-width:140px;">
+                <div style="font-weight:700;" id="sel-name">—</div>
+                <div class="muted small" id="sel-meta"></div>
+              </div>
+              <div class="d-flex gap-2">
+                <button class="btn btn-light-2 btn-sm" onclick="applyRoleDefault()"><i class="fa-solid fa-wand-magic-sparkles me-1"></i> Role default</button>
+                <button class="btn btn-light-2 btn-sm" onclick="setAll(true)"><i class="fa-solid fa-check-double me-1"></i> Grant all</button>
+                <button class="btn btn-light-2 btn-sm" onclick="setAll(false)"><i class="fa-solid fa-xmark me-1"></i> Revoke all</button>
+              </div>
+            </div>
+            <div style="overflow-x:auto;">
+              <table class="perm-table">
+                <thead>
+                  <tr><th class="sec">Section — القسم</th><th>View · عرض</th><th>Edit · تعديل</th><th>Delete · حذف</th></tr>
+                </thead>
+                <tbody id="matrix-body"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="muted small mt-2" id="save-hint"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/permissions.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+const roleColor = { admin: 'purple', hr: 'blue', finance: 'green', manager: 'amber', employee: 'pink' };
+const roleBadge = { admin: ['#ede9fe', '#6d28d9'], hr: ['#dbeafe', '#1d4ed8'], finance: ['#d1fae5', '#047857'], manager: ['#fef3c7', '#b45309'], employee: ['#fce7f3', '#be185d'] };
+const roleLabel = { admin: 'Administrator', hr: 'HR', finance: 'Finance', manager: 'Manager', employee: 'Employee' };
+let selId = null, matrix = null;
+
+function renderUsers() {
+  document.getElementById('user-list').innerHTML = LIBERTY.users.map(u => {
+    const [bg, fg] = roleBadge[u.role] || roleBadge.employee;
+    return `
+      <div class="urow ${u.id === selId ? 'active' : ''}" onclick="selectUser(${u.id})">
+        <div class="av ${roleColor[u.role] || 'pink'}" style="background:${bg};color:${fg};">${LIBERTY.initials(u.name)}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;">${u.name}</div>
+          <div class="muted small mono">@${u.username}</div>
+        </div>
+        <span class="role-badge" style="background:${bg};color:${fg};">${roleLabel[u.role] || u.role}</span>
+        ${u.active ? '' : '<span class="pill muted">off</span>'}
+      </div>`;
+  }).join('');
+}
+
+function selectUser(id) {
+  selId = id;
+  matrix = LIBERTY.permsFor(id);
+  const u = LIBERTY.users.find(x => x.id === id);
+  const [bg, fg] = roleBadge[u.role] || roleBadge.employee;
+  const av = document.getElementById('sel-av');
+  av.textContent = LIBERTY.initials(u.name); av.style.background = bg; av.style.color = fg;
+  document.getElementById('sel-name').textContent = u.name;
+  document.getElementById('sel-meta').innerHTML = `@${u.username} · ${roleLabel[u.role] || u.role}` +
+    (u.role === 'admin' ? ' · <span style="color:var(--primary)">full access by role</span>' : '');
+  renderUsers();
+  renderMatrix();
+}
+
+function renderMatrix() {
+  document.getElementById('matrix-body').innerHTML = LIBERTY.SECTIONS.map(sec => {
+    const p = matrix[sec.key] || { view: false, edit: false, delete: false };
+    return `
+      <tr>
+        <td class="sec">
+          <div class="perm-sec">
+            <div class="ic"><i class="fa-solid ${sec.icon}"></i></div>
+            <div><div class="nm">${sec.key}</div><div class="ds">${sec.desc}</div></div>
+          </div>
+        </td>
+        <td><label class="pchk"><input type="checkbox" data-sec="${sec.key}" data-act="view" ${p.view ? 'checked' : ''}><span>View</span></label></td>
+        <td><label class="pchk"><input type="checkbox" data-sec="${sec.key}" data-act="edit" ${p.edit ? 'checked' : ''}><span>Edit</span></label></td>
+        <td><label class="pchk del"><input type="checkbox" data-sec="${sec.key}" data-act="delete" ${p.delete ? 'checked' : ''}><span>Delete</span></label></td>
+      </tr>`;
+  }).join('');
+
+  document.querySelectorAll('#matrix-body input').forEach(chk => {
+    chk.addEventListener('change', function () {
+      const sec = this.dataset.sec, act = this.dataset.act;
+      matrix[sec][act] = this.checked;
+      // edit/delete require view; granting them auto-enables view
+      if ((act === 'edit' || act === 'delete') && this.checked && !matrix[sec].view) {
+        matrix[sec].view = true;
+      }
+      // removing view removes edit/delete
+      if (act === 'view' && !this.checked) { matrix[sec].edit = false; matrix[sec].delete = false; }
+      persist();
+      renderMatrix();
+    });
+  });
+}
+
+function persist() {
+  LIBERTY.savePermsFor(selId, matrix);
+  const h = document.getElementById('save-hint');
+  h.innerHTML = '<i class="fa-solid fa-check text-success me-1"></i> Saved ' + new Date().toLocaleTimeString();
+}
+function setAll(v) {
+  LIBERTY.SECTIONS.forEach(s => { matrix[s.key] = { view: v, edit: v, delete: v }; });
+  persist(); renderMatrix();
+}
+function applyRoleDefault() {
+  const u = LIBERTY.users.find(x => x.id === selId);
+  matrix = LIBERTY.roleDefault(u.role);
+  persist(); renderMatrix();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // wait a tick for shell to run its access guard
+  setTimeout(() => { if (document.getElementById('user-list')) { renderUsers(); selectUser(LIBERTY.users[0].id); } }, 0);
+});
+</script>
+</body>
+</html>

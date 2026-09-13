@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Treasury · HLS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="assets/css/app.css" rel="stylesheet">
+</head>
+<body data-page="acct-treasury" data-title="Treasury" data-sub="الخزنة — Cash box · May 2026">
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="content-wrap">
+    <div id="topbar-mount"></div>
+
+    <div class="page">
+
+      <div class="tabs-nav mb-4" id="books">
+        <a href="accounting-ledger.html">Ledger · الحركة</a>
+        <a href="accounting-treasury.html" class="active">Treasury · الخزنة</a>
+        <a href="accounting-bank.html">Bank · البنك</a>
+        <a href="student-fees.html">Student fees · مصاريف الطلبة</a>
+        <a href="bus-fees.html">Bus fees · رسوم الباص</a>
+      </div>
+
+      <div class="acct-card">
+        <div class="ac-ic"><i class="fa-solid fa-vault"></i></div>
+        <div>
+          <div class="ac-label">Main cash box · الخزنة الرئيسية</div>
+          <div class="ac-name">Helalia Language School</div>
+          <div class="ac-sub">Custodian · Treasury Desk</div>
+        </div>
+        <div class="ac-bal">
+          <div class="v" id="ac-bal">EGP 0</div>
+          <div class="l">Current balance</div>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-4"><div class="kpi"><div class="kpi-icon green"><i class="fa-solid fa-arrow-down"></i></div><div class="kpi-label">Cash in (month)</div><div class="kpi-value mono" id="k-in" style="font-size:21px;">EGP 0</div></div></div>
+        <div class="col-md-4"><div class="kpi"><div class="kpi-icon" style="background:var(--err-soft);color:var(--err)"><i class="fa-solid fa-arrow-up"></i></div><div class="kpi-label">Cash out (month)</div><div class="kpi-value mono" id="k-out" style="font-size:21px;">EGP 0</div></div></div>
+        <div class="col-md-4"><div class="kpi"><div class="kpi-icon blue"><i class="fa-solid fa-receipt"></i></div><div class="kpi-label">Transactions</div><div class="kpi-value" id="k-n">0</div></div></div>
+      </div>
+
+      <div class="page-head">
+        <div class="d-flex gap-2 align-items-center">
+          <span style="font-weight:600;">Cash movement — حركة الخزنة</span>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-light-2" onclick="openTx('Receipt')"><i class="fa-solid fa-arrow-down me-1" style="color:var(--ok);"></i> Receipt</button>
+          <button class="btn btn-primary" onclick="openTx('Payment')"><i class="fa-solid fa-arrow-up me-1"></i> Record payment</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table mb-0 align-middle">
+          <thead>
+            <tr>
+              <th>Date</th><th>Description</th><th>Type</th>
+              <th class="num">In (وارد)</th><th class="num">Out (منصرف)</th><th class="num">Balance</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Record transaction modal -->
+<div class="modal fade" id="txModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div><div class="card-title" id="txTitle">Record cash transaction</div>
+          <div class="card-sub">تسجيل حركة خزنة</div></div>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Direction</label>
+          <div class="d-flex gap-2">
+            <label class="dir-opt flex-fill"><input type="radio" name="dir" value="Receipt" hidden><span class="dir-pill" data-dir="Receipt"><i class="fa-solid fa-arrow-down me-1"></i> Receipt · وارد</span></label>
+            <label class="dir-opt flex-fill"><input type="radio" name="dir" value="Payment" hidden><span class="dir-pill" data-dir="Payment"><i class="fa-solid fa-arrow-up me-1"></i> Payment · منصرف</span></label>
+          </div>
+        </div>
+        <div class="row g-3">
+          <div class="col-7"><label class="form-label">Date</label><input type="date" class="form-control" id="f-date" value="2026-05-28"></div>
+          <div class="col-5"><label class="form-label">Amount (EGP)</label><input type="number" class="form-control mono" id="f-amount" placeholder="0" min="0"></div>
+          <div class="col-12"><label class="form-label">Description</label><input type="text" class="form-control" id="f-desc" placeholder="e.g. Cash tuition receipt"></div>
+          <div class="col-12"><label class="form-label">Category / contra</label>
+            <select class="form-select" id="f-cat">
+              <option>Tuition / fees</option><option>Petty cash top-up</option><option>Office expense</option>
+              <option>Maintenance</option><option>Staff advance</option><option>Bank transfer</option><option>Other</option>
+            </select></div>
+        </div>
+        <div class="text-danger small mt-2" id="f-err" style="display:none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-light-2" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" onclick="submitTx()"><i class="fa-solid fa-check me-1"></i> Record</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/permissions.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+const OPENING = 25000;
+const SEED = [
+  { date: '2026-05-01', desc: 'Opening balance', type: 'Opening', in: 0,     out: 0 },
+  { date: '2026-05-02', desc: 'Petty cash top-up from bank', type: 'Receipt', in: 10000, out: 0 },
+  { date: '2026-05-05', desc: 'Cash tuition receipts', type: 'Receipt', in: 35000, out: 0 },
+  { date: '2026-05-09', desc: 'Stationery & printing', type: 'Payment', in: 0, out: 4200 },
+  { date: '2026-05-15', desc: 'Maintenance — plumbing', type: 'Payment', in: 0, out: 3500 },
+  { date: '2026-05-20', desc: 'Staff cash advance', type: 'Payment', in: 0, out: 6000 },
+  { date: '2026-05-25', desc: 'Cafeteria supplies', type: 'Payment', in: 0, out: 5800 }
+];
+const KEY = 'liberty_treasury_tx';
+const typeColor = { Opening: 'muted', Receipt: 'ok', Payment: 'warn' };
+let txModal;
+
+const stored = () => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (_) { return []; } };
+const saveStored = a => localStorage.setItem(KEY, JSON.stringify(a));
+
+function allRows() {
+  const s = SEED.map((t, i) => ({ ...t, _seq: i }));
+  const u = stored().map((t, i) => ({ ...t, _seq: 1000 + i, user: true }));
+  return s.concat(u).sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : a._seq - b._seq);
+}
+
+function render() {
+  const rows = allRows();
+  let bal = OPENING, totIn = 0, totOut = 0;
+  document.getElementById('tbody').innerHTML = rows.map(t => {
+    bal += t.in - t.out; totIn += t.in; totOut += t.out;
+    return `
+      <tr${t.user ? ' style="background:var(--ok-soft);"' : ''}>
+        <td class="mono small">${t.date}</td>
+        <td>${t.desc}${t.user ? ' <span class="pill ok" style="margin-left:4px;">New</span>' : ''}</td>
+        <td><span class="pill ${typeColor[t.type] || 'muted'}">${t.type}</span></td>
+        <td class="num mono text-success">${t.in ? '+' + LIBERTY.money(t.in) : ''}</td>
+        <td class="num mono text-danger">${t.out ? '-' + LIBERTY.money(t.out) : ''}</td>
+        <td class="num mono fw-bold">${LIBERTY.money(bal)}</td>
+      </tr>`;
+  }).join('');
+  document.getElementById('ac-bal').textContent = LIBERTY.money(bal);
+  document.getElementById('k-in').textContent   = LIBERTY.money(totIn);
+  document.getElementById('k-out').textContent  = LIBERTY.money(totOut);
+  document.getElementById('k-n').textContent    = rows.filter(t => t.type !== 'Opening').length;
+}
+
+function setDir(dir) {
+  document.querySelector(`input[name="dir"][value="${dir}"]`).checked = true;
+  document.querySelectorAll('.dir-pill').forEach(p => p.classList.toggle('active', p.dataset.dir === dir));
+  document.getElementById('txTitle').textContent = dir === 'Receipt' ? 'Record cash receipt' : 'Record cash payment';
+}
+function openTx(dir) {
+  document.getElementById('f-amount').value = '';
+  document.getElementById('f-desc').value = '';
+  document.getElementById('f-err').style.display = 'none';
+  setDir(dir);
+  txModal.show();
+}
+function submitTx() {
+  const dir = document.querySelector('input[name="dir"]:checked').value;
+  const date = document.getElementById('f-date').value;
+  const amount = Math.round(parseFloat(document.getElementById('f-amount').value) || 0);
+  const desc = document.getElementById('f-desc').value.trim() || document.getElementById('f-cat').value;
+  const err = document.getElementById('f-err');
+  if (!date || amount <= 0) { err.textContent = 'Enter a valid date and amount.'; err.style.display = 'block'; return; }
+  const list = stored();
+  list.push({ date, desc, type: dir, in: dir === 'Receipt' ? amount : 0, out: dir === 'Payment' ? amount : 0 });
+  saveStored(list);
+  render();
+  txModal.hide();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  txModal = new bootstrap.Modal('#txModal');
+  document.querySelectorAll('.dir-pill').forEach(p => p.addEventListener('click', () => setDir(p.dataset.dir)));
+  render();
+});
+</script>
+</body>
+</html>

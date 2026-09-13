@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Post to accounting · Payroll · HLS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+<link href="assets/css/app.css" rel="stylesheet">
+</head>
+<body data-page="acct-post" data-title="Post to accounting" data-sub="Step 4 of 6 — automatic posting (ترحيل تلقائي)">
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+  <div class="content-wrap">
+    <div id="topbar-mount"></div>
+
+    <div class="page">
+
+      <div class="role-banner" style="background:linear-gradient(135deg,#0f766e,#115e59);">
+        <div class="rb-av"><i class="fa-solid fa-right-left"></i></div>
+        <div>
+          <div class="rb-role">Automatic posting · ترحيل تلقائي</div>
+          <div class="rb-name">Payroll → Accounting</div>
+          <div class="rb-task">The system builds the accounting entry and posts it via API — no re-keying</div>
+        </div>
+        <div class="rb-actions">
+          <a href="payroll-approval.html" class="btn btn-light-2"><i class="fa-solid fa-diagram-project me-1"></i> Workflow</a>
+        </div>
+      </div>
+
+      <div id="stepper" class="mb-4"></div>
+
+      <div id="gate"></div>
+
+      <!-- Integration band -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-3" id="pipeRow">
+            <div class="d-flex align-items-center gap-2">
+              <div style="width:42px;height:42px;border-radius:10px;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center;font-size:16px;"><i class="fa-solid fa-gears"></i></div>
+              <div><div style="font-weight:600;">Payroll engine</div><div class="muted small">Net salaries approved</div></div>
+            </div>
+            <div class="text-center muted" style="flex:1;min-width:160px;">
+              <div class="mono small" style="border:1px dashed var(--line);border-radius:20px;padding:5px 14px;display:inline-block;">
+                <i class="fa-solid fa-arrow-right-arrow-left me-1"></i> API / Service
+              </div>
+              <div class="small mt-1" id="pipeState">Ready to post</div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <div style="width:42px;height:42px;border-radius:10px;background:var(--info-soft);color:var(--info);display:grid;place-items:center;font-size:16px;"><i class="fa-solid fa-building-columns"></i></div>
+              <div><div style="font-weight:600;">Accounting system</div><div class="muted small">General ledger</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Journal entry -->
+      <div class="page-head mb-2">
+        <div class="d-flex gap-2 align-items-center">
+          <span style="font-weight:600;font-size:15px;">Accounting entry — القيد المحاسبي</span>
+          <span class="pill info" id="jrnStatus">Draft</span>
+        </div>
+        <div class="muted small">Period: <strong>May 2026</strong> · Voucher <span class="mono" id="vno"></span></div>
+      </div>
+
+      <div class="journal mb-4">
+        <div class="journal-head">
+          <div class="jh-title" id="acTitle">Payroll accrual — قيد استحقاق المرتبات</div>
+          <div class="jh-ref">Auto-generated from approved payroll</div>
+        </div>
+        <table>
+          <thead><tr><th style="width:55%;">Account</th><th class="text-end">Debit (مدين)</th><th class="text-end">Credit (دائن)</th></tr></thead>
+          <tbody id="acBody"></tbody>
+          <tfoot id="acFoot"></tfoot>
+        </table>
+      </div>
+
+      <div class="muted small mb-4" style="padding:12px 16px;background:var(--line-2);border-radius:10px;">
+        <i class="fa-solid fa-circle-info me-1"></i>
+        A matching <strong>payment entry</strong> (Dr Employees payable / Cr Bank) is posted automatically at settlement in step 6.
+        All operations are written to the audit log.
+      </div>
+
+      <!-- Action -->
+      <div class="card" id="actionCard">
+        <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-3">
+          <div>
+            <div style="font-weight:600;font-size:14px;">Post entry to the accounting system</div>
+            <div class="muted" style="font-size:12.5px;">This transfers the voucher to the GL and routes the run to the <strong>Finance Manager</strong> for review.</div>
+          </div>
+          <button class="btn btn-primary btn-lg" id="postBtn" onclick="postEntry()">
+            <i class="fa-solid fa-right-to-bracket me-2"></i> Post to accounting
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/payroll.js"></script>
+<script src="assets/js/permissions.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+const VNO = 'JV-2026-05-' + '0418';
+function lineRows(arr, type) {
+  return arr.map(l => `
+    <tr class="${type === 'cr' ? 'jrow-credit' : ''}">
+      <td>
+        <span class="${type === 'dr' ? 'dr-badge' : 'cr-badge'}">${type === 'dr' ? 'DR' : 'CR'}</span>
+        <span class="jc-acct">${l.acct}</span>&nbsp; ${l.name}
+        <div class="jc-ar">${l.ar}</div>
+      </td>
+      <td class="amt">${type === 'dr' ? LIBERTY.money(l.amt) : ''}</td>
+      <td class="amt">${type === 'cr' ? LIBERTY.money(l.amt) : ''}</td>
+    </tr>`).join('');
+}
+
+function render() {
+  const j = PAYROLL.journal();
+  document.getElementById('vno').textContent = VNO;
+  document.getElementById('acBody').innerHTML = lineRows(j.accrual.debit, 'dr') + lineRows(j.accrual.credit, 'cr');
+  document.getElementById('acFoot').innerHTML = `
+    <tr><td>Totals — balanced ✓</td>
+      <td class="amt">${LIBERTY.money(j.totalDebit)}</td>
+      <td class="amt">${LIBERTY.money(j.totalCredit)}</td></tr>`;
+  PAYROLL.renderStepper('stepper', 4);
+
+  const s = PAYROLL.load();
+  const gate = document.getElementById('gate');
+  const card = document.getElementById('actionCard');
+  const posted = s.done >= 4;
+  document.getElementById('jrnStatus').className = 'pill ' + (posted ? 'ok' : 'info');
+  document.getElementById('jrnStatus').textContent = posted ? 'Posted to GL' : 'Draft';
+  document.getElementById('pipeState').textContent = posted ? 'Posted ✓' : 'Ready to post';
+
+  if (s.done < 3) {
+    gate.innerHTML = warn('Waiting for HR Manager approval',
+      'The entry is generated only after payroll is approved.', 'payroll-hr-manager.html', 'Open HR approval');
+    card.style.display = 'none';
+  } else if (posted) {
+    gate.innerHTML = ok('Entry posted to accounting',
+      'Voucher ' + VNO + ' is in the general ledger, pending Finance review.', 'payroll-finance.html', 'Open Accounting');
+    card.style.display = 'none';
+  } else {
+    gate.innerHTML = '';
+    card.style.display = '';
+  }
+}
+
+function warn(t, d, href, label) {
+  return `<div class="card mb-4" style="border-color:var(--warn);background:var(--warn-soft);">
+    <div class="card-body d-flex align-items-center gap-3">
+      <i class="fa-solid fa-clock" style="font-size:20px;color:var(--warn);"></i>
+      <div class="flex-grow-1"><div style="font-weight:600;">${t}</div><div class="muted" style="font-size:12.5px;">${d}</div></div>
+      <a href="${href}" class="btn btn-light-2">${label}</a></div></div>`;
+}
+function ok(t, d, href, label) {
+  return `<div class="card mb-4" style="border-color:var(--ok);background:var(--ok-soft);">
+    <div class="card-body d-flex align-items-center gap-3">
+      <i class="fa-solid fa-circle-check" style="font-size:20px;color:var(--ok);"></i>
+      <div class="flex-grow-1"><div style="font-weight:600;">${t}</div><div class="muted" style="font-size:12.5px;">${d}</div></div>
+      <a href="${href}" class="btn btn-soft">${label}</a></div></div>`;
+}
+
+function postEntry() {
+  const b = document.getElementById('postBtn');
+  b.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Posting via API…';
+  b.disabled = true;
+  setTimeout(() => {
+    PAYROLL.advance(4, 'Auto-posted accounting entry ' + VNO + ' to the GL');
+    location.href = 'payroll-finance.html';
+  }, 850);
+}
+
+document.addEventListener('DOMContentLoaded', render);
+</script>
+</body>
+</html>

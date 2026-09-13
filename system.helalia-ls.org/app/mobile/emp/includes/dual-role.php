@@ -89,9 +89,15 @@ function dual_manual_parent_accounts()
         '01064847016' => array('parent_id' => 267, 'parent_phone' => '01210310102'), // Yasmine Morsy Ali
         '02280185596' => array('parent_id' => 1186, 'parent_phone' => '01090431443', 'alt_parent_login' => '01090431443'), // Zenat mohamed
         '01066727106' => array('parent_id' => 1340, 'parent_phone' => '01211285364'), // عمرو عباس
+        // Dev test pair: staff 01065144487 ↔ parent account 01065144489 (#136)
+        '01065144487' => array('parent_id' => 136, 'parent_phone' => '01065144489'),
     );
 }
 
+/**
+ * Resolve dual-role map entry from a staff phone OR its mapped parent / alt phone.
+ * Returns info plus staff_phone (canonical employee login phone).
+ */
 function dual_manual_parent_info_for_phone($rawPhone)
 {
     $n = dual_digits($rawPhone);
@@ -100,10 +106,32 @@ function dual_manual_parent_info_for_phone($rawPhone)
     }
     foreach (dual_manual_parent_accounts() as $phone => $info) {
         if (dual_digits($phone) === $n) {
-            return $info;
+            $out = $info;
+            $out['staff_phone'] = $phone;
+            return $out;
+        }
+        if (!empty($info['parent_phone']) && dual_digits($info['parent_phone']) === $n) {
+            $out = $info;
+            $out['staff_phone'] = $phone;
+            return $out;
+        }
+        if (!empty($info['alt_parent_login']) && dual_digits($info['alt_parent_login']) === $n) {
+            $out = $info;
+            $out['staff_phone'] = $phone;
+            return $out;
         }
     }
     return null;
+}
+
+/** Canonical staff login phone for any dual-related phone, or ''. */
+function dual_manual_staff_phone_for_any($rawPhone)
+{
+    $info = dual_manual_parent_info_for_phone($rawPhone);
+    if ($info && !empty($info['staff_phone'])) {
+        return (string) $info['staff_phone'];
+    }
+    return '';
 }
 
 function dual_manual_parent_info_for_current()
@@ -257,7 +285,7 @@ function dual_clear_emp_backup_after_emp_role()
 }
 
 /**
- * Rebuild emp backup from helu/help cookies when the PHP session lost it.
+ * Rebuild emp backup from helu/help cookies (or current dual phone) when session lost it.
  * Dual Parent mode keeps emp cookies on purpose — use them to restore Switch role.
  */
 function dual_ensure_emp_backup_from_helu()
@@ -266,10 +294,28 @@ function dual_ensure_emp_backup_from_helu()
         && !empty($_SESSION['helalia_emp_backup']['MM_Userid'])) {
         return true;
     }
-    global $database, $database_database;
+    global $database, $database_database, $row_get_user;
     $helu = isset($_COOKIE['helu']) ? trim((string) $_COOKIE['helu']) : '';
     $help = isset($_COOKIE['help']) ? (string) $_COOKIE['help'] : '';
-    if ($helu === '' || !dual_manual_parent_info_for_phone($helu)) {
+    $candidates = array();
+    if ($helu !== '') {
+        $candidates[] = $helu;
+    }
+    if (!empty($_SESSION['MM_Username'])) {
+        $candidates[] = (string) $_SESSION['MM_Username'];
+    }
+    if (isset($row_get_user['phone']) && $row_get_user['phone'] !== '') {
+        $candidates[] = (string) $row_get_user['phone'];
+    }
+
+    $staffPhone = '';
+    foreach ($candidates as $raw) {
+        $staffPhone = dual_manual_staff_phone_for_any($raw);
+        if ($staffPhone !== '') {
+            break;
+        }
+    }
+    if ($staffPhone === '') {
         return false;
     }
     if (!isset($database) || !($database instanceof mysqli)) {
@@ -280,7 +326,7 @@ function dual_ensure_emp_backup_from_helu()
     } elseif (!empty($GLOBALS['database_database'])) {
         mysqli_select_db($database, $GLOBALS['database_database']);
     }
-    $phoneEsc = dual_esc($helu);
+    $phoneEsc = dual_esc($staffPhone);
     $row = null;
     $q = mysqli_query(
         $database,
@@ -292,7 +338,7 @@ function dual_ensure_emp_backup_from_helu()
     }
     if (!$row) {
         // Digits-normalized match for staff phone formatting differences.
-        $want = dual_digits($helu);
+        $want = dual_digits($staffPhone);
         $q2 = mysqli_query(
             $database,
             "SELECT `id`, `phone`, `password`, `account_type`, `phone_id` FROM `app_login` WHERE `account_type` = 2"
@@ -309,15 +355,23 @@ function dual_ensure_emp_backup_from_helu()
     if (!$row || (int) $row['id'] < 1) {
         return false;
     }
+    $cookieHelu = ($helu !== '' && dual_manual_staff_phone_for_any($helu) === $staffPhone)
+        ? $helu
+        : (isset($row['phone']) ? $row['phone'] : $staffPhone);
     $_SESSION['helalia_emp_backup'] = array(
-        'MM_Username' => isset($row['phone']) ? $row['phone'] : $helu,
+        'MM_Username' => isset($row['phone']) ? $row['phone'] : $staffPhone,
         'MM_Userid' => (int) $row['id'],
         'account_type' => 2,
         'phone_id' => isset($row['phone_id']) ? $row['phone_id'] : null,
-        'helu' => $helu,
+        'helu' => $cookieHelu,
         'help' => ($help !== '' ? $help : (isset($row['password']) ? $row['password'] : '')),
     );
+    // Keep emp login cookies pointing at staff phone so reopen → chooser works.
     if (!headers_sent()) {
+        dual_set_login_cookies(
+            isset($row['phone']) ? $row['phone'] : $staffPhone,
+            isset($row['password']) ? $row['password'] : $help
+        );
         setcookie('helalia_dual_staff', '1', time() + (86400 * 365), '/');
     }
     $_COOKIE['helalia_dual_staff'] = '1';
@@ -325,28 +379,50 @@ function dual_ensure_emp_backup_from_helu()
 }
 
 /**
- * Parent Settings: show Switch role whenever this browser is a dual-staff session.
- * Do not rely only on helalia_emp_backup (PHP session can drop it).
+ * Parent Settings: show Switch role whenever this login is on the dual-role list
+ * (staff phone or mapped parent phone), even if PHP session dropped emp backup.
  */
 function dual_parent_can_switch_role()
 {
+    global $row_get_user;
+
     dual_ensure_emp_backup_from_helu();
     if (!empty($_SESSION['helalia_emp_backup']) && is_array($_SESSION['helalia_emp_backup'])
         && !empty($_SESSION['helalia_emp_backup']['MM_Userid'])) {
         return true;
     }
-    $helu = isset($_COOKIE['helu']) ? (string) $_COOKIE['helu'] : '';
-    if ($helu !== '' && dual_manual_parent_info_for_phone($helu)) {
+
+    $candidates = array();
+    if (!empty($_COOKIE['helu'])) {
+        $candidates[] = (string) $_COOKIE['helu'];
+    }
+    if (!empty($_SESSION['MM_Username'])) {
+        $candidates[] = (string) $_SESSION['MM_Username'];
+    }
+    if (isset($row_get_user['phone']) && $row_get_user['phone'] !== '') {
+        $candidates[] = (string) $row_get_user['phone'];
+    }
+    if (!empty($_SESSION['helalia_emp_backup']['MM_Username'])) {
+        $candidates[] = (string) $_SESSION['helalia_emp_backup']['MM_Username'];
+    }
+    foreach ($candidates as $raw) {
+        if (dual_manual_parent_info_for_phone($raw)) {
+            if (!headers_sent()) {
+                setcookie('helalia_dual_staff', '1', time() + (86400 * 365), '/');
+            }
+            $_COOKIE['helalia_dual_staff'] = '1';
+            return true;
+        }
+    }
+
+    // Staff account opened parent pages without a dual map entry — still allow escape to Emp.
+    if (isset($_SESSION['account_type']) && (int) $_SESSION['account_type'] === 2) {
         return true;
     }
-    if (!empty($_COOKIE['helalia_dual_staff']) && $_COOKIE['helalia_dual_staff'] === '1'
-        && $helu !== '' && dual_manual_parent_info_for_phone($helu)) {
+    if (isset($row_get_user['account_type']) && (int) $row_get_user['account_type'] === 2) {
         return true;
     }
-    if (isset($_SESSION['helalia_role']) && $_SESSION['helalia_role'] === 'parent'
-        && $helu !== '' && dual_manual_parent_info_for_phone($helu)) {
-        return true;
-    }
+
     return false;
 }
 

@@ -1,6 +1,0 @@
-<?php
-$staffLang = 'eng';
-require dirname(__DIR__) . '/includes/staff.php';
-require dirname(__DIR__) . '/includes/staff-control.php';
-header('Content-Type: text/plain; charset=UTF-8');
-echo staff_ctrl_save_col('control_registry') ? '1' : '0';

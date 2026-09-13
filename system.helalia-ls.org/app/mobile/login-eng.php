@@ -2,6 +2,11 @@
       include("includes/functions_eng.php");
       include_once("emp/includes/dual-entry.php"); 
       $wrong = 0;
+
+// Keep device id from the app open URL
+if (isset($_GET['id']) && $_GET['id'] != NULL) {
+    $_SESSION['phone_id'] = escape($_GET['id']);
+}
  
 //redirect is session is set
 if (isset($_SESSION['MM_Username']) && isset($_SESSION['MM_Userid']) && isset($_SESSION['account_type'])) {
@@ -38,28 +43,30 @@ if (isset($_POST['phone'])) {
         $_SESSION['account_type']  = $row['account_type'];  
         language_update($row['id'],$lang);
 
-        if (isset($_POST['remember']) && $_POST['remember'] == 1) {
-            setcookie("helu", $loginUsername, time() + (86400 * 365), "/");
-            setcookie("help", $password, time() + (86400 * 365), "/");
-        }   
+        // Always keep the user logged in when they reopen the app (1 year).
+        setcookie("helu", $loginUsername, time() + (86400 * 365), "/");
+        setcookie("help", $password, time() + (86400 * 365), "/");
         
-       // stop 1 devide login for 1 account
-       //  if($row['phone_id']!=null && $_SESSION['phone_id']!=NULL && $row['phone_id']!=$_SESSION['phone_id']){
-       //    unset($_SESSION['MM_Username']); 
-       //    unset($_SESSION['MM_Userid']);	 
-       //    unset($_SESSION['account_type']); 
-       //     setcookie("helu", "", time() - (86400 * 400), "/");  
-       //     setcookie("help", "", time() - (86400 * 400), "/");
-       //    header("Location:  login-".$lang_dir.".php?linked");
-       //      exit();  
-       // }else{
-             if (isset($_SESSION['phone_id']) && $_SESSION['phone_id'] != NULL && $row['phone_id']==NULL) { 
-                phone_id_update($_SESSION['phone_id'], $row['id']);
-             } 
-            dual_entry_redirect_if_dual_staff($loginUsername, $row['account_type'], $lang_dir);
-            header("Location: ".account_type_folder($row['account_type'])."/".$lang_dir."/".account_type_url($row['account_type']));
+        // One device per account: bind on first login; block other devices after that.
+        $boundId = isset($row['phone_id']) ? trim((string) $row['phone_id']) : '';
+        $deviceId = (isset($_SESSION['phone_id']) && $_SESSION['phone_id'] !== null)
+            ? trim((string) $_SESSION['phone_id'])
+            : '';
+        if ($boundId !== '' && $deviceId !== '' && $boundId !== $deviceId) {
+            unset($_SESSION['MM_Username']);
+            unset($_SESSION['MM_Userid']);
+            unset($_SESSION['account_type']);
+            setcookie("helu", "", time() - (86400 * 400), "/");
+            setcookie("help", "", time() - (86400 * 400), "/");
+            header("Location:  login-".$lang_dir.".php?linked");
             exit();
-       // } 
+        }
+        if ($deviceId !== '' && $boundId === '') {
+            phone_id_update($deviceId, $row['id']);
+        }
+        dual_entry_redirect_if_dual_staff($loginUsername, $row['account_type'], $lang_dir);
+        header("Location: ".account_type_folder($row['account_type'])."/".$lang_dir."/".account_type_url($row['account_type']));
+        exit();
 
  
     } else {
@@ -119,7 +126,7 @@ if (isset($_POST['phone'])) {
 
 
 
-<?php if ($wrong == 1 || isset($_GET['linked11111'])) { ?> 
+<?php if ($wrong == 1 || isset($_GET['linked'])) { ?> 
      <style>
       .hl-modal{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;
         justify-content:center;padding:20px;background:rgba(17,44,90,.55);
@@ -177,7 +184,7 @@ if (isset($_POST['phone'])) {
       })();
     </script>
 
-  <?php }   if (isset($_GET['linked11111'])) { ?>  
+  <?php }   if (isset($_GET['linked'])) { ?>  
 
     <div class="hl-modal" id="phone-linked" role="alertdialog" aria-live="assertive" aria-label="Device notice">
       <div class="hl-modal__box">

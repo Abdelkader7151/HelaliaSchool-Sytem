@@ -131,7 +131,7 @@
     
    <nav class="nav nav--trio" aria-label="الرئيسية" style="height: 90px">
 
-    <a class="nav__item is-active" href="parent-view.php">
+    <a class="nav__item" href="parent-view.php">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="9" cy="8" r="3.2"/>
         <path d="M3 19a6 6 0 0 1 12 0"/>
@@ -142,7 +142,7 @@
       <span class="nav__dot"></span>
     </a>
 
-    <a class="nav__item" href="parent-timeline.php">
+    <a class="nav__item is-active" href="parent-timeline.php">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M4 5h13v14H5.5A1.5 1.5 0 0 1 4 17.5V5z"/>
         <path d="M17 9h2.5A1.5 1.5 0 0 1 21 10.5v7a1.5 1.5 0 0 1-1.5 1.5H17"/>

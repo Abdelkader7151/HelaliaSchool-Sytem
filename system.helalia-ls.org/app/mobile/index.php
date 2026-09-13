@@ -1,64 +1,80 @@
 <?php require_once('Connections/database.php');
       include("includes/functions.php");
+      include_once("emp/includes/dual-entry.php");
 
-    $phone_id = NULL;
-    $_SESSION['phone_id'] = NULL;
-
-
-if(isset($_GET['id']) && $_GET['id']!=NULL){ 
+$phone_id = NULL;
+if (isset($_GET['id']) && $_GET['id'] != NULL) {
     $phone_id = escape($_GET['id']);
     $_SESSION['phone_id'] = $phone_id;
-} 
-
-
-//swtich if user loged
-if (isset($_SESSION['MM_Username'])) {  
-    header("location: ".account_type_folder($row_get_user['account_type'])."/".switch_lang($row_get_user['languages'])."/".account_type_url($row_get_user['account_type']));
-    exit;
+} elseif (!empty($_SESSION['phone_id'])) {
+    $phone_id = $_SESSION['phone_id'];
 }
 
+/**
+ * Keep user logged in on reopen: session first, then Remember cookies.
+ * Still enforces one-device lock and dual-role chooser.
+ */
+function helalia_splash_enter_app($database, $loginUsername, $row, $phone_id)
+{
+    $boundId = isset($row['phone_id']) ? trim((string) $row['phone_id']) : '';
+    $deviceId = ($phone_id !== null && $phone_id !== '') ? trim((string) $phone_id) : '';
 
-//if remember active
+    if ($boundId !== '' && $deviceId !== '' && $boundId !== $deviceId) {
+        unset($_SESSION['MM_Username'], $_SESSION['MM_Userid'], $_SESSION['account_type']);
+        setcookie("helu", "", time() - (86400 * 400), "/");
+        setcookie("help", "", time() - (86400 * 400), "/");
+        header("Location: login-" . switch_lang($row['languages']) . ".php?linked");
+        exit();
+    }
+    if ($deviceId !== '' && $boundId === '') {
+        phone_id_update($deviceId, $row['id']);
+    }
+
+    $langDir = switch_lang($row['languages']);
+    dual_entry_redirect_if_dual_staff($loginUsername, $row['account_type'], $langDir);
+    header(
+        "Location: " . account_type_folder($row['account_type']) . "/" . $langDir . "/" . account_type_url($row['account_type'])
+    );
+    exit();
+}
+
+// Already logged in (same app session) — stay in
+if (isset($_SESSION['MM_Username'], $_SESSION['MM_Userid'], $_SESSION['account_type'])) {
+    $uid = (int) $_SESSION['MM_Userid'];
+    $q = mysqli_query(
+        $database,
+        "SELECT `phone`, `password`, `id`, `account_type`, `languages`, `phone_id` FROM `app_login` WHERE `id`={$uid} LIMIT 1"
+    );
+    $row = ($q && mysqli_num_rows($q)) ? mysqli_fetch_assoc($q) : null;
+    if ($row) {
+        $_SESSION['MM_Username'] = $row['phone'];
+        $_SESSION['account_type'] = $row['account_type'];
+        helalia_splash_enter_app($database, $row['phone'], $row, $phone_id);
+    }
+    unset($_SESSION['MM_Username'], $_SESSION['MM_Userid'], $_SESSION['account_type']);
+}
+
+// Remember cookies — stay logged in after app restart
 if (isset($_COOKIE['helu']) && isset($_COOKIE['help'])) {
     $loginUsername = escape($_COOKIE['helu']);
-    $password = escape($_COOKIE['help']);  
+    $password = escape($_COOKIE['help']);
 
     $LoginRS__query = sprintf(
         "SELECT `phone`, `password`, `id`, `account_type`, `languages`, `phone_id` FROM `app_login` WHERE `phone`=%s AND `password`=%s",
-          GetSQLValueString($database, $loginUsername, "text"),
-          GetSQLValueString($database,$password, "text")
-      );
+        GetSQLValueString($database, $loginUsername, "text"),
+        GetSQLValueString($database, $password, "text")
+    );
 
     $LoginRS = mysqli_query($database, $LoginRS__query) or die(mysqli_error($database));
-    $loginFoundUser = mysqli_num_rows($LoginRS);
-
-    if ($loginFoundUser) { 
-        $row = mysqli_fetch_assoc($LoginRS);    
-        session_regenerate_id(true); 
-        //declare two session variables and assign them
+    if (mysqli_num_rows($LoginRS)) {
+        $row = mysqli_fetch_assoc($LoginRS);
+        session_regenerate_id(true);
         $_SESSION['MM_Username'] = $loginUsername;
         $_SESSION['MM_Userid'] = $row['id'];
         $_SESSION['account_type'] = $row['account_type'];
-
-        
-        if($row['phone_id']!=null && $phone_id!=null && $row['phone_id']!=$phone_id){
-            unset($_SESSION['MM_Username']); 
-            unset($_SESSION['MM_Userid']);	 
-            unset($_SESSION['account_type']); 
-            setcookie("helu", "", time() - (86400 * 400), "/");  
-            setcookie("help", "", time() - (86400 * 400), "/");
-            header("Location:  login-".switch_lang($row['languages']).".php?linked");
-            exit();
-        }else{
-           if ($phone_id != null && $row['phone_id']==null) { 
-                phone_id_update($phone_id, $row['id']);
-             } 
-            header("Location: ".account_type_folder($row['account_type'])."/".switch_lang($row['languages'])."/".account_type_url($row['account_type']));
-            exit();
-        } 
-        
+        helalia_splash_enter_app($database, $loginUsername, $row, $phone_id);
     }
-}   
+}
 
 ?> 
 <!DOCTYPE html>
@@ -85,7 +101,7 @@ if (isset($_COOKIE['helu']) && isset($_COOKIE['help'])) {
       <img class="splash__logo" src="parent/assets/img/logo.png" alt="Helalia Language School">
     </div>
     <nav class="splash__langs" aria-label="Language">
-      <a class="splash__lang splash__lang--gold" href="login-eng.php?id=<?php echo $phone_id; ?>">
+      <a class="splash__lang splash__lang--gold" href="login-eng.php?id=<?php echo htmlspecialchars((string) $phone_id, ENT_QUOTES, 'UTF-8'); ?>">
         <span class="splash__lang-code">EN</span>
         <span>
           <b>English</b>
@@ -93,7 +109,7 @@ if (isset($_COOKIE['helu']) && isset($_COOKIE['help'])) {
         </span>
         <span class="splash__lang-go" aria-hidden="true">›</span>
       </a>
-      <a class="splash__lang" href="login-arb.php?id=<?php echo $phone_id; ?>" lang="ar" dir="rtl">
+      <a class="splash__lang" href="login-arb.php?id=<?php echo htmlspecialchars((string) $phone_id, ENT_QUOTES, 'UTF-8'); ?>" lang="ar" dir="rtl">
         <span class="splash__lang-code">ع</span>
         <span>
           <b>العربية</b>

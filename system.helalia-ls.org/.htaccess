@@ -1,4 +1,4 @@
-RewriteEngine on
+RewriteEngine on 
 
 RewriteCond %{HTTP_REFERER} !^$
 RewriteCond %{HTTP_REFERER} !^http://helalia-ls.org/.*$      [NC]
@@ -9,6 +9,8 @@ RewriteCond %{HTTP_REFERER} !^https://helalia-ls.org/.*$      [NC]
 RewriteCond %{HTTP_REFERER} !^https://helalia-ls.org$      [NC]
 RewriteCond %{HTTP_REFERER} !^https://www.helalia-ls.org/.*$      [NC]
 RewriteCond %{HTTP_REFERER} !^https://www.helalia-ls.org$      [NC]
+
+Options -Indexes
 
 # BEGIN cPanel-generated php ini directives, do not edit
 # Manual editing of this file may result in unexpected behavior.

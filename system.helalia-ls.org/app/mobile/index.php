@@ -1,5 +1,6 @@
 <?php require_once('Connections/database.php');
       include("includes/functions.php");
+      include_once("includes/auth-persist.php");
       include_once("emp/includes/dual-entry.php");
 
 $phone_id = NULL;
@@ -19,15 +20,22 @@ function helalia_splash_enter_app($database, $loginUsername, $row, $phone_id)
     $boundId = isset($row['phone_id']) ? trim((string) $row['phone_id']) : '';
     $deviceId = ($phone_id !== null && $phone_id !== '') ? trim((string) $phone_id) : '';
 
+    // One device per account: mismatch → stay logged out (must use the bound phone).
+    // Empty bound id → bind this device on first successful reopen after reset.
     if ($boundId !== '' && $deviceId !== '' && $boundId !== $deviceId) {
-        unset($_SESSION['MM_Username'], $_SESSION['MM_Userid'], $_SESSION['account_type']);
-        setcookie("helu", "", time() - (86400 * 400), "/");
-        setcookie("help", "", time() - (86400 * 400), "/");
-        header("Location: login-" . switch_lang($row['languages']) . ".php?linked");
+        helalia_clear_login_session();
+        helalia_clear_auth_cookies();
+        $langDir = switch_lang($row['languages']);
+        header('Location: login-' . $langDir . '.php?linked&id=' . rawurlencode($deviceId));
         exit();
     }
     if ($deviceId !== '' && $boundId === '') {
         phone_id_update($deviceId, $row['id']);
+    }
+
+    // Refresh long-lived auth cookies on every successful open.
+    if (function_exists('helalia_set_auth_cookies') && !empty($row['password'])) {
+        helalia_set_auth_cookies($loginUsername, $row['password']);
     }
 
     $langDir = switch_lang($row['languages']);
@@ -38,8 +46,17 @@ function helalia_splash_enter_app($database, $loginUsername, $row, $phone_id)
     exit();
 }
 
+$splashClearClientAuth = false;
+
+// Stale sessions/cookies from before school-wide logout (any phone OS).
+if (!helalia_auth_epoch_ok() && (!empty($_SESSION['MM_Username']) || !empty($_COOKIE['helu']) || !empty($_COOKIE['help']))) {
+    helalia_clear_login_session();
+    helalia_clear_auth_cookies();
+    $splashClearClientAuth = true;
+}
+
 // Already logged in (same app session) — stay in
-if (isset($_SESSION['MM_Username'], $_SESSION['MM_Userid'], $_SESSION['account_type'])) {
+if (!$splashClearClientAuth && isset($_SESSION['MM_Username'], $_SESSION['MM_Userid'], $_SESSION['account_type']) && helalia_auth_epoch_ok()) {
     $uid = (int) $_SESSION['MM_Userid'];
     $q = mysqli_query(
         $database,
@@ -54,9 +71,9 @@ if (isset($_SESSION['MM_Username'], $_SESSION['MM_Userid'], $_SESSION['account_t
     unset($_SESSION['MM_Username'], $_SESSION['MM_Userid'], $_SESSION['account_type']);
 }
 
-// Remember cookies — stay logged in after app restart
-if (isset($_COOKIE['helu']) && isset($_COOKIE['help'])) {
-    $loginUsername = escape($_COOKIE['helu']);
+// Remember cookies — stay logged in after app restart (Android + iPhone)
+if (!$splashClearClientAuth && isset($_COOKIE['helu'], $_COOKIE['help']) && helalia_auth_epoch_ok()) {
+    $loginUsername = escape(helalia_normalize_login_phone($_COOKIE['helu']));
     $password = escape($_COOKIE['help']);
 
     $LoginRS__query = sprintf(
@@ -74,7 +91,13 @@ if (isset($_COOKIE['helu']) && isset($_COOKIE['help'])) {
         $_SESSION['account_type'] = $row['account_type'];
         helalia_splash_enter_app($database, $loginUsername, $row, $phone_id);
     }
+    // Bad/stale cookies — force login screen on every OS
+    helalia_clear_auth_cookies();
+    $splashClearClientAuth = true;
 }
+
+$splashIdQs = htmlspecialchars((string) $phone_id, ENT_QUOTES, 'UTF-8');
+$authEpochJs = json_encode(helalia_auth_epoch(), JSON_UNESCAPED_UNICODE);
 
 ?> 
 <!DOCTYPE html>
@@ -93,6 +116,35 @@ if (isset($_COOKIE['helu']) && isset($_COOKIE['help'])) {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Cairo:wght@600;700;800&display=swap">
 <link rel="stylesheet" href="parent/assets/css/helalia.css">
+<script>
+/* Clear stale auth after school-wide logout; restore only matching epoch (iPhone + Android). */
+(function () {
+  var epoch = <?php echo $authEpochJs; ?>;
+  var forceClear = <?php echo $splashClearClientAuth ? 'true' : 'false'; ?>;
+  try {
+    var storedV = localStorage.getItem('helalia_helv');
+    if (forceClear || (storedV && storedV !== epoch)) {
+      localStorage.removeItem('helalia_helu');
+      localStorage.removeItem('helalia_help');
+      localStorage.removeItem('helalia_helv');
+    }
+  } catch (e) {}
+  try {
+    if (forceClear) return;
+    if (document.cookie.indexOf('helu=') !== -1 && document.cookie.indexOf('help=') !== -1 && document.cookie.indexOf('helv=') !== -1) return;
+    var u = localStorage.getItem('helalia_helu');
+    var p = localStorage.getItem('helalia_help');
+    var v = localStorage.getItem('helalia_helv');
+    if (!u || !p || !v || v !== epoch) return;
+    var maxAge = 60 * 60 * 24 * 365;
+    var secure = location.protocol === 'https:' ? ';Secure' : '';
+    document.cookie = 'helu=' + encodeURIComponent(u) + ';path=/;max-age=' + maxAge + ';SameSite=Lax' + secure;
+    document.cookie = 'help=' + encodeURIComponent(p) + ';path=/;max-age=' + maxAge + ';SameSite=Lax' + secure;
+    document.cookie = 'helv=' + encodeURIComponent(v) + ';path=/;max-age=' + maxAge + ';SameSite=Lax' + secure;
+    location.replace(location.pathname + location.search);
+  } catch (e) {}
+})();
+</script>
 </head>
 <body>
 <div class="app app--splash">
@@ -101,7 +153,7 @@ if (isset($_COOKIE['helu']) && isset($_COOKIE['help'])) {
       <img class="splash__logo" src="parent/assets/img/logo.png" alt="Helalia Language School">
     </div>
     <nav class="splash__langs" aria-label="Language">
-      <a class="splash__lang splash__lang--gold" href="login-eng.php?id=<?php echo htmlspecialchars((string) $phone_id, ENT_QUOTES, 'UTF-8'); ?>">
+      <a class="splash__lang splash__lang--gold" href="login-eng.php?id=<?php echo $splashIdQs; ?>">
         <span class="splash__lang-code">EN</span>
         <span>
           <b>English</b>
@@ -109,13 +161,13 @@ if (isset($_COOKIE['helu']) && isset($_COOKIE['help'])) {
         </span>
         <span class="splash__lang-go" aria-hidden="true">›</span>
       </a>
-      <a class="splash__lang" href="login-arb.php?id=<?php echo htmlspecialchars((string) $phone_id, ENT_QUOTES, 'UTF-8'); ?>" lang="ar" dir="rtl">
+      <a class="splash__lang" href="login-arb.php?id=<?php echo $splashIdQs; ?>" lang="ar" dir="rtl">
         <span class="splash__lang-code">ع</span>
         <span>
           <b>العربية</b>
           <small>متابعة</small>
         </span>
-        <span class="splash__lang-go" aria-hidden="true">›</span>
+        <span class="splash__lang-go" aria-hidden="true">‹</span>
       </a>
     </nav>
     <p class="splash__copy" style="text-align:center">© <?php echo date('Y'); ?> <span>Helalia</span>

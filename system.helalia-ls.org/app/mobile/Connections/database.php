@@ -6,7 +6,22 @@
 
 # HTTP="true"
 
-if (!isset($_SESSION)){session_start();}   
+if (!isset($_SESSION)){
+  // Keep PHP session alive across iPhone app reopen (fallback; main auth is helu/help cookies).
+  if (PHP_VERSION_ID >= 70300) {
+    session_set_cookie_params(array(
+      'lifetime' => 86400 * 365,
+      'path' => '/',
+      'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+          || (isset($_SERVER['SERVER_PORT']) && (string) $_SERVER['SERVER_PORT'] === '443'),
+      'httponly' => true,
+      'samesite' => 'Lax',
+    ));
+  } else {
+    session_set_cookie_params(86400 * 365, '/');
+  }
+  session_start();
+} 
 
  //error_reporting(E_ERROR | E_WARNING | E_PARSE);
 

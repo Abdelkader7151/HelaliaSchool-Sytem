@@ -67,6 +67,11 @@ if (isset($_SESSION['MM_Username'])) {
     $totalRows_get_user = mysqli_num_rows($get_user); 
 }
 
+include_once __DIR__ . '/auth-persist.php';
+if (function_exists('helalia_require_fresh_auth')) {
+    helalia_require_fresh_auth('../../index.php');
+}
+
 
 
  //update languages

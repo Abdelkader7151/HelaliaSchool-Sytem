@@ -1,5 +1,6 @@
 <?php require_once('Connections/database.php');
       include("includes/functions_arb.php");
+      include_once("includes/auth-persist.php");
       include_once("emp/includes/dual-entry.php");
       $wrong = 0;
 
@@ -22,7 +23,7 @@ if (isset($_SESSION['MM_Username']) && isset($_SESSION['MM_Userid']) && isset($_
 
 
 if (isset($_POST['phone'])) { 
-    $loginUsername = escape($_POST['phone']);
+    $loginUsername = escape(helalia_normalize_login_phone($_POST['phone']));
     $password      = escape(md5(strtolower($_POST['password'])));  
 
     $LoginRS__query = sprintf(
@@ -43,10 +44,6 @@ if (isset($_POST['phone'])) {
         $_SESSION['account_type']  = $row['account_type'];  
         language_update($row['id'],$lang);
 
-        // Always keep the user logged in when they reopen the app (1 year).
-        setcookie("helu", $loginUsername, time() + (86400 * 365), "/");
-        setcookie("help", $password, time() + (86400 * 365), "/");
-        
         // One device per account: bind on first login; block other devices after that.
         $boundId = isset($row['phone_id']) ? trim((string) $row['phone_id']) : '';
         $deviceId = (isset($_SESSION['phone_id']) && $_SESSION['phone_id'] !== null)
@@ -56,17 +53,27 @@ if (isset($_POST['phone'])) {
             unset($_SESSION['MM_Username']);
             unset($_SESSION['MM_Userid']);
             unset($_SESSION['account_type']);
-            setcookie("helu", "", time() - (86400 * 400), "/");
-            setcookie("help", "", time() - (86400 * 400), "/");
+            helalia_clear_auth_cookies();
             header("Location:  login-".$lang_dir.".php?linked");
             exit();
         }
         if ($deviceId !== '' && $boundId === '') {
             phone_id_update($deviceId, $row['id']);
         }
-        dual_entry_redirect_if_dual_staff($loginUsername, $row['account_type'], $lang_dir);
-        header("Location: ".account_type_folder($row['account_type'])."/".$lang_dir."/".account_type_url($row['account_type']));
-        exit();
+
+        $langDir = $lang_dir;
+        $dest = account_type_folder($row['account_type'])."/".$langDir."/".account_type_url($row['account_type']);
+        if (function_exists('dual_entry_is_staff_phone') && dual_entry_is_staff_phone($loginUsername)
+            && (int) $row['account_type'] === 2) {
+            if (function_exists('dual_entry_clear_pick')) {
+                dual_entry_clear_pick();
+            }
+            if (!headers_sent()) {
+                setcookie('helalia_dual_staff', '1', time() + (86400 * 365), '/');
+            }
+            $dest = 'emp/' . $langDir . '/choose-role.php';
+        }
+        helalia_persist_and_redirect($loginUsername, $password, $dest);
 
  
     } else {

@@ -3,6 +3,13 @@
  * Detect staff who are also parents. Login stays on the employee phone.
  */
 
+if (!function_exists('helalia_set_auth_cookies')) {
+    $__ap = dirname(dirname(__DIR__)) . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'auth-persist.php';
+    if (is_file($__ap)) {
+        include_once $__ap;
+    }
+}
+
 function dual_digits($s)
 {
     $d = preg_replace('/\D+/', '', (string) $s);
@@ -179,6 +186,10 @@ function dual_set_login_cookies($phone, $password)
 {
     $phone = (string) $phone;
     if ($phone === '') {
+        return;
+    }
+    if (function_exists('helalia_set_auth_cookies')) {
+        helalia_set_auth_cookies($phone, $password !== null ? (string) $password : '');
         return;
     }
     $expire = time() + (86400 * 365);

@@ -5,6 +5,13 @@ if (!isset($_SESSION)) {
 require_once __DIR__ . '/local-request.php';
 require_once __DIR__ . '/dual-role.php';
 dual_restore_emp_session_for_staff_boot();
+if (function_exists('helalia_require_fresh_auth')) {
+    $staffInKidEarly = false;
+    $staffSelfEarly = isset($_SERVER['PHP_SELF']) ? str_replace('\\', '/', (string) $_SERVER['PHP_SELF']) : '';
+    $staffFileEarly = isset($_SERVER['SCRIPT_FILENAME']) ? str_replace('\\', '/', (string) $_SERVER['SCRIPT_FILENAME']) : '';
+    $staffInKidEarly = (strpos($staffSelfEarly, '/kid/') !== false) || (strpos($staffFileEarly, '/kid/') !== false);
+    helalia_require_fresh_auth($staffInKidEarly ? '../../../index.php' : '../../index.php');
+}
 if (empty($_SESSION['staff_csrf'])) {
     $_SESSION['staff_csrf'] = bin2hex(function_exists('random_bytes') ? random_bytes(16) : openssl_random_pseudo_bytes(16));
 }
@@ -68,15 +75,19 @@ if (isset($_GET['exit'])) {
     );
     setcookie('helalia_dual_pick', '', time() - 3600, '/');
     setcookie('helalia_dual_staff', '', time() - 3600, '/');
-    setcookie('helu', '', time() - (86400 * 400), '/');
-    setcookie('help', '', time() - (86400 * 400), '/');
     $up = $staffInKid ? '../' : '';
     $loginUp = $staffInKid ? '../../../' : '../../';
     if ($staffLocalLive) {
-        header('Location: ' . staff_local_picker_href());
+        $dest = staff_local_picker_href();
     } else {
-        header('Location: ' . ($staffPreview ? ($up . 'emp-view.php') : ($loginUp . $loginFile)));
+        $dest = $staffPreview ? ($up . 'emp-view.php') : ($loginUp . $loginFile);
     }
+    if (function_exists('helalia_logout_and_redirect')) {
+        helalia_logout_and_redirect($dest);
+    }
+    setcookie('helu', '', time() - (86400 * 400), '/');
+    setcookie('help', '', time() - (86400 * 400), '/');
+    header('Location: ' . $dest);
     exit;
 }
 

@@ -23,7 +23,7 @@ if(isset($_POST['submit'])){
                        GetSQLValueString($database,0, "int"), 
                        GetSQLValueString($database,$_POST['text_eng'], "text"),  
                        GetSQLValueString($database,$_POST['text_arb'], "text"), 
-                       GetSQLValueString($database,time(), "int"), 
+                       GetSQLValueString($database, strtotime(date('m/d/Y')), "int"), 
                        GetSQLValueString($database,$image_name, "text"),
                        GetSQLValueString($database,$row_get_login['id'], "text"));
 
@@ -65,7 +65,7 @@ if(isset($_POST['submit'])){
                        GetSQLValueString($database,$_POST['class'], "int"), 
                        GetSQLValueString($database,$_POST['text_eng'], "text"),  
                        GetSQLValueString($database,$_POST['text_arb'], "text"), 
-                       GetSQLValueString($database,time(), "int"), 
+                       GetSQLValueString($database, strtotime(date('m/d/Y')), "int"), 
                        GetSQLValueString($database,$image_name, "text"),
                        GetSQLValueString($database,$row_get_login['id'], "text"));
 

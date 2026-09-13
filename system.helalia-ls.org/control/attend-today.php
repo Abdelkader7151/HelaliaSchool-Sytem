@@ -114,7 +114,7 @@ $head_title = "  الموظفين";
                         <td class="text-center" style="<?php if($row_get_att_today['absent']==1 && $row_get_att_today['exception']==0){echo " color:red";}?>" ><?php if($row_get_att_today['emp_id']>0){echo job_name(emp_job($row_get_att_today['emp_id']));} ?></td>  
 
 
-                        <td class="text-center" style="<?php if($row_get_att_today['absent']==1 && $row_get_att_today['exception']==0){echo " color:red";}?>" ><?php if($row_get_att_today['absent']==0){ echo date("H:i",$row_get_att_today['on_duty']); }?>@</td>  
+                        <td class="text-center" style="<?php if($row_get_att_today['absent']==1 && $row_get_att_today['exception']==0){echo " color:red";}?>" ><?php if($row_get_att_today['absent']==0){ echo date("H:i",$row_get_att_today['on_duty']); }?></td>  
                         <td class="text-center" style="<?php if($row_get_att_today['absent']==1 && $row_get_att_today['exception']==0){echo " color:red";}?>" ><?php if($row_get_att_today['absent']==0 && $row_get_att_today['sign_in']!=NULL){ echo date("H:i",$row_get_att_today['sign_in']); }else{echo "-";}?></td>  
                         <!--<td class="text-center" style="<?php //if($row_get_att_today['absent']==1 && $row_get_att_today['exception']==0){echo " color:red";}?>" ><?php //if($row_get_att_today['absent']==0){ echo date("H:i",$row_get_att_today['off_duty']); }?></td> 
                         <td class="text-center" style="<?php //if($row_get_att_today['absent']==1 && $row_get_att_today['exception']==0){echo " color:red";}?>" ><?php //if($row_get_att_today['absent']==0 && $row_get_att_today['sign_out']!=NULL){ echo date("H:i",$row_get_att_today['sign_out']); }else{echo "-";}?></td>-->  

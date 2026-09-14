@@ -50,7 +50,7 @@ if ($row_get_login['access100'] == 1) {
   `access22`= %s,  
   `access23`= %s, `access23sub1`= %s, `access23sub2`= %s, `access23sub3`= %s, `access23sub4`= %s, `access23sub5`= %s, 
   `access100`= %s, `access100sub1`= %s, `access100sub2`= %s, `access100sub3`= %s  WHERE `id` = %s",
-      GetSQLValueString($database, strtolower($_POST['password']), "text"),
+      GetSQLValueString($database, strtolower(trim($_POST['password'])), "text"),
       GetSQLValueString($database, $_POST['name'], "text"),
 
       GetSQLValueString($database, $_POST['access1'] ? 1 : 0, "int"),

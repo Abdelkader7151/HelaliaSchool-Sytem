@@ -8,8 +8,9 @@ if(isset($_SESSION['MM_Username']) && isset($_SESSION['admin'])){header("locatio
 $failed=0; 
 
 if (isset($_POST['username'])) {
-  $loginUsername=strtolower($_POST['username']);
-  $password=strtolower($_POST['password']);
+  // trim: username momken yet7awel be spaces men el form (schooladmin ma kanesh beyedkhol)
+  $loginUsername=strtolower(trim($_POST['username']));
+  $password=strtolower(trim($_POST['password']));
   $MM_fldUserAuthorization = "id";
   $MM_redirectLoginSuccess = "home.php";
   $MM_redirectLoginFailed = "failed";

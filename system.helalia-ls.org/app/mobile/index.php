@@ -1,6 +1,7 @@
 <?php require_once('Connections/database.php');
       include("includes/functions.php");
       include_once("includes/auth-persist.php");
+      include_once("includes/device-lock.php");
       include_once("emp/includes/dual-entry.php");
 
 $phone_id = NULL;
@@ -13,24 +14,17 @@ if (isset($_GET['id']) && $_GET['id'] != NULL) {
 
 /**
  * Keep user logged in on reopen: session first, then Remember cookies.
- * Still enforces one-device lock and dual-role chooser.
+ * Device lock: shof device-lock.php (HELALIA_DEVICE_LOCK).
  */
 function helalia_splash_enter_app($database, $loginUsername, $row, $phone_id)
 {
-    $boundId = isset($row['phone_id']) ? trim((string) $row['phone_id']) : '';
-    $deviceId = ($phone_id !== null && $phone_id !== '') ? trim((string) $phone_id) : '';
-
-    // One device per account: mismatch → stay logged out (must use the bound phone).
-    // Empty bound id → bind this device on first successful reopen after reset.
-    if ($boundId !== '' && $deviceId !== '' && $boundId !== $deviceId) {
+    if (helalia_device_login_check($row, $phone_id) === 'linked') {
         helalia_clear_login_session();
         helalia_clear_auth_cookies();
         $langDir = switch_lang($row['languages']);
+        $deviceId = ($phone_id !== null && $phone_id !== '') ? trim((string) $phone_id) : '';
         header('Location: login-' . $langDir . '.php?linked&id=' . rawurlencode($deviceId));
         exit();
-    }
-    if ($deviceId !== '' && $boundId === '') {
-        phone_id_update($deviceId, $row['id']);
     }
 
     // Refresh long-lived auth cookies on every successful open.

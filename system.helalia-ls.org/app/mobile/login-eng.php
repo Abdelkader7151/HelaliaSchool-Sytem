@@ -1,6 +1,7 @@
 <?php require_once('Connections/database.php');
       include("includes/functions_eng.php");
       include_once("includes/auth-persist.php");
+      include_once("includes/device-lock.php");
       include_once("emp/includes/dual-entry.php"); 
       $wrong = 0;
 
@@ -44,21 +45,13 @@ if (isset($_POST['phone'])) {
         $_SESSION['account_type']  = $row['account_type'];  
         language_update($row['id'],$lang);
 
-        // One device per account: bind on first login; block other devices after that.
-        $boundId = isset($row['phone_id']) ? trim((string) $row['phone_id']) : '';
-        $deviceId = (isset($_SESSION['phone_id']) && $_SESSION['phone_id'] !== null)
-            ? trim((string) $_SESSION['phone_id'])
-            : '';
-        if ($boundId !== '' && $deviceId !== '' && $boundId !== $deviceId) {
+        if (helalia_device_login_check($row, isset($_SESSION['phone_id']) ? $_SESSION['phone_id'] : '') === 'linked') {
             unset($_SESSION['MM_Username']);
             unset($_SESSION['MM_Userid']);
             unset($_SESSION['account_type']);
             helalia_clear_auth_cookies();
             header("Location:  login-".$lang_dir.".php?linked");
             exit();
-        }
-        if ($deviceId !== '' && $boundId === '') {
-            phone_id_update($deviceId, $row['id']);
         }
 
         // Dual staff → chooser; everyone else → home. Persist cookies for iPhone reopen.

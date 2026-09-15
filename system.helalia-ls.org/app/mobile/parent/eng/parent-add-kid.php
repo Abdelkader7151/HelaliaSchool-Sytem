@@ -8,8 +8,8 @@
       if(isset($_POST['submit'])){     
 
         $query_get_kid_info = sprintf("SELECT * FROM `kids` WHERE `gov_id` =%s AND `ed_id`=%s  ",  
-                      GetSQLValueString($database ,$_POST['gov_id'], "text"),
-                      GetSQLValueString($database ,$_POST['ed_id'], "text"));   
+                      GetSQLValueString($database ,$_POST['gov_id'], "int"),
+                      GetSQLValueString($database ,$_POST['ed_id'], "int"));   
         $get_kid_info = mysqli_query($database, $query_get_kid_info) or die(mysqli_error($database));
         $row_get_kid_info = mysqli_fetch_assoc($get_kid_info);
         $totalRows_get_kid_info = mysqli_num_rows($get_kid_info);
@@ -19,18 +19,18 @@
            $error = 1;   
         }else{
          //check if the kid is already added to this parent
-          $query_get_kids_list = sprintf("SELECT * FROM `kids_list` WHERE `parent_id` =%s AND `kid_id`=%s  ",  
-                          GetSQLValueString($database ,$row_get_user['id'], "text"),
-                          GetSQLValueString($database ,$row_get_kid_info['id'], "text"));   
+            $query_get_kids_list = sprintf("SELECT * FROM `kids_list` WHERE `parent_id` =%s AND `kid_id`=%s  ",  
+                          GetSQLValueString($database, $row_get_user['id'], "int"),
+                          GetSQLValueString($database, $row_get_kid_info['id'], "int"));   
             $get_kids_list = mysqli_query($database, $query_get_kids_list) or die(mysqli_error($database));
             $row_get_kids_list = mysqli_fetch_assoc($get_kids_list);
             $totalRows_get_kids_list = mysqli_num_rows($get_kids_list);
 
-            if( $totalRows_get_kids_list==0){ 
+            if($totalRows_get_kids_list==0){ 
                 //add the kid to the parent
-               $query_insert_kid = sprintf("INSERT INTO `kids_list` (`parent_id`, `kid_id`) VALUES (%s, %s)", 
-                              GetSQLValueString($database ,$row_get_user['id'], "int"),
-                              GetSQLValueString($database ,$row_get_kid_info['id'], "int"));   
+               $query_insert_kid = sprintf("INSERT INTO `kids_list` ( `parent_id`, `kid_id`) VALUES (%s, %s)", 
+                              GetSQLValueString($database, $row_get_user['id'], "int"),
+                              GetSQLValueString($database, $row_get_kid_info['id'], "int"));   
                 mysqli_query($database, $query_insert_kid) or die(mysqli_error($database));
 
                 header("location: parent-view.php"); 

@@ -1,4 +1,15 @@
 <?php
+session_start();
+if (isset($_GET['mobile']) && $_GET['mobile'] == '1') {
+    $_SESSION['is_mobile_app'] = true;
+} else {
+    // Direct browser access without the app flag — block it here.
+    http_response_code(403);
+    $_SESSION['is_mobile_app'] = false;
+    die('This page can only be accessed through the Helalia app.');
+}
+
+
 if (!function_exists("GetSQLValueString")) {
 
 	function GetSQLValueString($conn_vote, $theValue, $theType, $theDefinedValue = "", $theNotDefinedValue = "")   

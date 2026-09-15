@@ -61,8 +61,8 @@ if ($row_get_login['access100'] == 1) {
         %s, %s, %s, %s, %s, %s,
         %s, %s, %s, %s,
         %s, %s)",
-      GetSQLValueString($database, strtolower($_POST['username']), "text"),
-      GetSQLValueString($database, strtolower($_POST['password']), "text"),
+      GetSQLValueString($database, strtolower(trim($_POST['username'])), "text"),
+      GetSQLValueString($database, strtolower(trim($_POST['password'])), "text"),
       GetSQLValueString($database, $_POST['name'], "text"),
 
       GetSQLValueString($database, $_POST['access1'] ? 1 : 0, "int"),

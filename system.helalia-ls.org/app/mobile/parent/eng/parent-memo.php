@@ -83,13 +83,25 @@
           <h2 class="sec__title">Today</h2>
         </div>
 
+    <?php
+      // Only this kid's year (or school-wide 300) + this class (or all-classes 0/NULL).
+      $memoYear = (int) $row_get_kid_data['study_year'];
+      $memoClass = (int) $row_get_kid_data['class'];
+      $memoTarget = "(`study_year` = '{$memoYear}' OR `study_year` = 300) AND (`class` = '{$memoClass}' OR `class` = 0 OR `class` IS NULL OR `class` = '')";
+
+      $query_get_data_today = "SELECT * FROM `memos` WHERE {$memoTarget} AND `date` >= '{$today}' AND `date` < ('{$today}' + 86400) ORDER BY `id` DESC ";
+      $get_data_today = mysqli_query($database, $query_get_data_today) or die(mysqli_error($database));
+      $row_get_data_today = mysqli_fetch_assoc($get_data_today);
+      $totalRows_get_data_today = mysqli_num_rows($get_data_today);
+
+      $query_get_data_old = "SELECT * FROM `memos` WHERE {$memoTarget} AND `date` < '{$today}' ORDER BY `id` DESC ";
+      $get_data_old = mysqli_query($database, $query_get_data_old) or die(mysqli_error($database));
+      $row_get_data_old = mysqli_fetch_assoc($get_data_old);
+      $totalRows_get_data_old = mysqli_num_rows($get_data_old);
+    ?>
+
     <div class="rows">
       <?php
-        $query_get_data_today = "SELECT * FROM `memos` WHERE `study_year` = '{$row_get_kid_data['study_year']}' AND (`class` = '{$row_get_kid_data['class']}' ||  `class` = 0 ||  `class` IS NULL )    AND `date` ='{$today}' order BY `id` desc  ";
-        $get_data_today = mysqli_query($database ,$query_get_data_today) or die(mysqli_error($database));
-        $row_get_data_today = mysqli_fetch_assoc($get_data_today);
-        $totalRows_get_data_today = mysqli_num_rows($get_data_today);
-        
         if($totalRows_get_data_today>0){
           do{ ?> 
           <a class="row t-gold" href="parent-memo-item.php?id=<?php echo $row_get_data_today['id'];?>&kid=<?php echo $row_get_kid_data['id'];?>">
@@ -113,13 +125,8 @@
 
  
 
- <div class="rows">
+    <div class="rows<?php echo ($totalRows_get_data_today == 0 && $totalRows_get_data_old > 0) ? ' is-expanded' : ''; ?>">
       <?php
-        $query_get_data_old = "SELECT * FROM `memos` WHERE `study_year` = '{$row_get_kid_data['study_year']}' AND (`class` = '{$row_get_kid_data['class']}' ||  `class` = 0 ||  `class` IS NULL )   AND `date` < '{$today}' order BY `id` desc  ";
-        $get_data_old = mysqli_query($database ,$query_get_data_old) or die(mysqli_error($database));
-        $row_get_data_old = mysqli_fetch_assoc($get_data_old);
-        $totalRows_get_data_old = mysqli_num_rows($get_data_old);
-        
         if($totalRows_get_data_old >0){?>
           <div class="sec">
             <h2 class="sec__title">Previous</h2>
@@ -206,11 +213,15 @@
 <script>
 (function () {
   var more = document.getElementById('hw-more');
+  if (!more) return;
   more.addEventListener('click', function () {
     more.setAttribute('aria-busy', 'true');
     more.innerHTML = '<span class="spin"></span>Loading';
     setTimeout(function () {
-      document.querySelector('.hw--old').closest('.rows').classList.add('is-expanded');
+      var old = document.querySelector('.hw--old');
+      if (old && old.closest('.rows')) {
+        old.closest('.rows').classList.add('is-expanded');
+      }
       more.remove();
     }, 600);
   });

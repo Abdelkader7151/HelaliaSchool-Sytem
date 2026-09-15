@@ -128,6 +128,9 @@ $typeLabel = function ($t) {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="../assets/css/helalia.css?v=35">
+<style>
+  .auth__fine{ color: black}
+</style>
 </head>
 <body>
 <div class="app">

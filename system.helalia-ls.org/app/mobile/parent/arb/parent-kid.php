@@ -281,7 +281,9 @@
           </a>
 
           <?php
-      $query_get_memo_count = "SELECT COUNT(*) as `memo` FROM `memos` WHERE `study_year` = '{$row_get_kid_data['study_year']}' AND (`class` = '{$row_get_kid_data['class']}' ||  `class` = 0  ||  `class` IS NULL )  AND `date` ='{$today}' order BY `id` desc  ";
+      $memoYear = (int) $row_get_kid_data['study_year'];
+      $memoClass = (int) $row_get_kid_data['class'];
+      $query_get_memo_count = "SELECT COUNT(*) as `memo` FROM `memos` WHERE (`study_year` = '{$memoYear}' OR `study_year` = 300) AND (`class` = '{$memoClass}' OR `class` = 0 OR `class` IS NULL OR `class` = '') AND `date` >= '{$today}' AND `date` < ('{$today}' + 86400) ";
       $get_memo_count = mysqli_query($database ,$query_get_memo_count) or die(mysqli_error($database));
       $row_get_memo_count = mysqli_fetch_assoc($get_memo_count);
       $totalRows_get_memo_count = mysqli_num_rows($get_memo_count); ?>

@@ -1,6 +1,12 @@
 <?php 
 if (!isset($_SESSION)) { session_start(); }
 
+if (!isset($_SESSION['is_mobile_app']) | $_SESSION['is_mobile_app']== false) {
+    header("location: https://www.helalia-ls.org");
+    exit(); 
+}
+
+
 
 if (!function_exists("GetSQLValueString")) {
 

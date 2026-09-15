@@ -2,6 +2,7 @@
       include("../../includes/logout.php");
       include("../../includes/access.php");
       include("../../includes/functions_eng.php");
+      require_once dirname(__DIR__) . '/includes/file-media.php';
       
       $kid_id = escape($_GET['kid']); 
       $id = escape($_GET['id']); 
@@ -38,7 +39,19 @@
         if($totalRows_get_data==0){
           header("Location: parent-view.php");
           exit();
-        }  
+        }
+
+        // Block opening a memo that is not for this kid's year/class.
+        $kidYear = (int) $row_get_kid_data['study_year'];
+        $kidClass = (int) $row_get_kid_data['class'];
+        $memoYear = (int) $row_get_data['study_year'];
+        $memoClassRaw = $row_get_data['class'];
+        $memoClassOk = ($memoClassRaw === null || $memoClassRaw === '' || (int) $memoClassRaw === 0 || (int) $memoClassRaw === $kidClass);
+        $memoYearOk = ($memoYear === $kidYear || $memoYear === 300);
+        if (!$memoYearOk || !$memoClassOk) {
+          header("Location: parent-memo.php?id=" . rawurlencode($kid_id));
+          exit();
+        }
 
 
        
@@ -103,9 +116,8 @@
           <span class="chip t-gold"><?php echo emp_name($row_get_data['emp_id']); ?></span>
           <span class="chip t-coral chip--solid"><?php echo date("d M, Y", $row_get_data['date']); ?></span>
         </div>
-         <?php if($row_get_data['banner']!=NULL && file_exists('../../../../homework/'.$row_get_data['banner'])==1){ ?> 
-          <img src="../../../../homework/<?php if($row_get_data['banner']!=NULL && file_exists('../../../../homework/'.$row_get_data['banner'])==1){echo $row_get_data['banner'];} ?>" alt=" ">
-          <?php } ?>
+         <?php // show soora aw Open file (PDF) — shof file-media.php
+               parent_show_banner($row_get_data['banner'], 'eng'); ?>
       </div>
 
 
@@ -265,7 +277,7 @@
       
       <div class="fold__panel">
 <?php do{ ?>
-        <a class="fold__item" href="../../../../homework/<?php echo $row_get_memo_files['file'];?>">  
+        <a class="fold__item" href="../../../../homework/<?php echo $row_get_memo_files['file'];?>" target="_blank">  
           <?php if(strtolower(pathinfo(trim($row_get_memo_files['file']), PATHINFO_EXTENSION))=='pdf'){ echo $pdf; } ?>
           <?php if(strtolower(pathinfo(trim($row_get_memo_files['file']), PATHINFO_EXTENSION))=='doc' || strtolower(pathinfo(trim($row_get_memo_files['file']), PATHINFO_EXTENSION))=='docx' ){ echo $doc; } ?> 
           <?php if(strtolower(pathinfo(trim($row_get_memo_files['file']), PATHINFO_EXTENSION))=='xls' || strtolower(pathinfo(trim($row_get_memo_files['file']), PATHINFO_EXTENSION))=='xlsx' ){ echo $doc; } ?> 
@@ -370,39 +382,6 @@
   .lightbox .light__caption { display: block; font-size: 15px; }
   .lightbox .light__count { display: block; font-size: 13px; opacity: 0.7; margin-top: 4px; }
 </style>
-<div class="lightbox" id="lightbox">
-  <div class="light__backdrop"></div>
-  <div class="light__frame" id="lb-frame">
-    <button class="light__close" id="lb-close" type="button" aria-label="Close">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M18 6 6 18M6 6l12 12"/>
-      </svg>
-    </button>
-
-    <button class="light__nav light__nav--prev" id="lb-prev" type="button" aria-label="Previous">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M15 19 8 12l7-7"/>
-      </svg>
-    </button>
-
-    <div class="light__media">
-      <img id="lb-img" src="" alt="">
-      <video id="lb-video" controls playsinline></video>
-    </div>
-
-    <button class="light__nav light__nav--next" id="lb-next" type="button" aria-label="Next">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="m9 5 7 7-7 7"/>
-      </svg>
-    </button>
-
-    <div class="light__footer">
-      <span class="light__caption" id="lb-caption"></span>
-      <span class="light__count" id="lb-count"></span>
-    </div>
-  </div>
-</div>
-
 <div class="lightbox" id="lightbox">
   <div class="light__backdrop"></div>
   <div class="light__frame" id="lb-frame">

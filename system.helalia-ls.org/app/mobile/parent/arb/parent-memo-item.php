@@ -2,6 +2,7 @@
       include("../../includes/logout.php");
       include("../../includes/access.php");
       include("../../includes/functions_arb.php");
+      require_once dirname(__DIR__) . '/includes/file-media.php';
       
       $kid_id = escape($_GET['kid']); 
       $id = escape($_GET['id']); 
@@ -38,7 +39,19 @@
         if($totalRows_get_data==0){
           header("Location: parent-view.php");
           exit();
-        }  
+        }
+
+        // Block opening a memo that is not for this kid's year/class.
+        $kidYear = (int) $row_get_kid_data['study_year'];
+        $kidClass = (int) $row_get_kid_data['class'];
+        $memoYear = (int) $row_get_data['study_year'];
+        $memoClassRaw = $row_get_data['class'];
+        $memoClassOk = ($memoClassRaw === null || $memoClassRaw === '' || (int) $memoClassRaw === 0 || (int) $memoClassRaw === $kidClass);
+        $memoYearOk = ($memoYear === $kidYear || $memoYear === 300);
+        if (!$memoYearOk || !$memoClassOk) {
+          header("Location: parent-memo.php?id=" . rawurlencode($kid_id));
+          exit();
+        }
 
 
        
@@ -100,16 +113,18 @@
   
 <div class="card stack">
 
-        <h2 class="hwtitle"><?php echo $row_get_data['name_eng']; ?></h2>
+        <?php // title: arb law mawgood, else eng
+          $memoTitle = (!empty($row_get_data['name_arb'])) ? $row_get_data['name_arb'] : $row_get_data['name_eng'];
+        ?>
+        <h2 class="hwtitle"><?php echo $memoTitle; ?></h2>
         <p class="lede">
-         <?php echo $row_get_data['text_eng']; ?></p>
+         <?php echo (!empty($row_get_data['text_arb'])) ? $row_get_data['text_arb'] : $row_get_data['text_eng']; ?></p>
         <div class="chiprow">
           <span class="chip t-gold"><?php echo emp_name($row_get_data['emp_id']); ?></span>
           <span class="chip t-coral chip--solid"><?php echo date("d M, Y", $row_get_data['date']); ?></span>
         </div>
-         <?php if($row_get_data['banner']!=NULL && file_exists('../../../../homework/'.$row_get_data['banner'])==1){ ?> 
-          <img src="../../../../homework/<?php if($row_get_data['banner']!=NULL && file_exists('../../../../homework/'.$row_get_data['banner'])==1){echo $row_get_data['banner'];} ?>" alt=" ">
-          <?php } ?>
+         <?php // show soora aw Open file (PDF) — shof file-media.php
+               parent_show_banner($row_get_data['banner'], 'arb'); ?>
       </div>
 
 
@@ -269,7 +284,7 @@
       
       <div class="fold__panel">
 <?php do{ ?>
-        <a class="fold__item" href="../../../../homework/<?php echo $row_get_memo_files['file'];?>">  
+        <a class="fold__item" href="../../../../homework/<?php echo $row_get_memo_files['file'];?>" target="_blank">  
           <?php if(strtolower(pathinfo(trim($row_get_memo_files['file']), PATHINFO_EXTENSION))=='pdf'){ echo $pdf; } ?>
           <?php if(strtolower(pathinfo(trim($row_get_memo_files['file']), PATHINFO_EXTENSION))=='doc' || strtolower(pathinfo(trim($row_get_memo_files['file']), PATHINFO_EXTENSION))=='docx' ){ echo $doc; } ?> 
           <?php if(strtolower(pathinfo(trim($row_get_memo_files['file']), PATHINFO_EXTENSION))=='xls' || strtolower(pathinfo(trim($row_get_memo_files['file']), PATHINFO_EXTENSION))=='xlsx' ){ echo $doc; } ?> 

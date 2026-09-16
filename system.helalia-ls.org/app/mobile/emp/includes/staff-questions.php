@@ -526,7 +526,8 @@ function staff_q_visible($row, $access, $empId)
         }
     }
 
-    if ($subject < 1000) {
+    // app20_7 = stage supervisor. Job Coordinator: subject-only (cor/teach) — mesh kol el subjects
+    if ($subject < 1000 && !(function_exists('staff_job_is_coordinator') && staff_job_is_coordinator($empId))) {
         $sup = 'app20_7_' . $band;
         if ($staffPreview) {
             if (!empty($access[$sup])) {

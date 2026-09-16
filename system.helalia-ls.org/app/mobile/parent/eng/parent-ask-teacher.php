@@ -149,9 +149,14 @@ if($totalRows_get_check<1){
                     }
                 } 
 
-                  // For coordinators
+                  // For coordinators — subject da bas (cor aw job Coordinator bey3alemoh)
                   if($_POST['subject']<1000){
-                     if(check_teacher_subject($_POST['subject'])>0){
+                     if (function_exists('subject_coordinator_emps')) {
+                       $cooList = subject_coordinator_emps($_POST['subject']);
+                       foreach ($cooList as $cooId) {
+                         sendMessage(app_msg_id2($cooId),'HLS', date("d/m/Y",time()).' سؤال من ولي امر  '.kid_name($kid_id));
+                       }
+                     } elseif(check_teacher_subject($_POST['subject'])>0){
                          sendMessage(app_msg_id2(check_teacher_subject($_POST['subject'])),'HLS', date("d/m/Y",time()).' سؤال من ولي امر  '.kid_name($kid_id)); 
                       }
                       
@@ -160,7 +165,7 @@ if($totalRows_get_check<1){
                          sendMessage(app_msg_id2(check_head_subject($_POST['subject'])),'HLS', date("d/m/Y",time()).' سؤال من ولي امر  '.kid_name($kid_id)); 
                       }
                       
-                      //supervisor
+                      //supervisor (app20_7) — mesh Coordinator job; stage supervisors
                       $app =''; 
                       if($row_get_kids['study_year'] == 0 )                                     { $app = ' AND `app20_7_1` = 1  '; } 
                       if($row_get_kids['study_year'] >= 1 && $row_get_kids['study_year'] <= 2)  { $app = ' AND `app20_7_2` = 1  '; } 
@@ -169,7 +174,7 @@ if($totalRows_get_check<1){
                       if($row_get_kids['study_year'] >= 9 && $row_get_kids['study_year'] <= 11) { $app = ' AND `app20_7_5` = 1  '; } 
                       if($row_get_kids['study_year'] >= 12 && $row_get_kids['study_year'] <= 14){ $app = ' AND `app20_7_6` = 1  '; }  
  
-                      $query_get_app = "SELECT * FROM `emps` WHERE `id`>0  $app ";    
+                      $query_get_app = "SELECT * FROM `emps` WHERE `id`>0 AND `job` != 81 $app ";    
                       $get_app = mysqli_query($database ,$query_get_app) or die(mysqli_error($database));
                       $row_get_app = mysqli_fetch_assoc($get_app);
                       $totalRows_get_app = mysqli_num_rows($get_app); 

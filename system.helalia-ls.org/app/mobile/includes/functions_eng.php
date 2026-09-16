@@ -2000,6 +2000,47 @@ function check_teacher_subject($id){
     if($totalRows_get_data>0){ return $row_get_data['head'];}
   }
 
+/**
+ * subject_coordinator_emps
+ * Emp ids el mafrood yewsalhom so2al el subject da (Coordinator bas).
+ * 1) subjects.cor law mawgood
+ * 2) ay emp job=Coordinator bey3alem el subject fe teachers
+ * Mesh beygeb kol el subjects — subject wahed bas.
+ */
+function subject_coordinator_emps($subjectId)
+{
+    global $database;
+    $subjectId = (int) $subjectId;
+    $out = array();
+    if ($subjectId < 1 || !isset($database)) {
+        return $out;
+    }
+
+    $cor = 0;
+    if (function_exists('check_teacher_subject')) {
+        $cor = (int) check_teacher_subject($subjectId);
+    }
+    if ($cor > 0) {
+        $out[$cor] = $cor;
+    }
+
+    $sql = "SELECT DISTINCT e.`id` FROM `teachers` t
+            INNER JOIN `emps` e ON e.`id` = t.`emp_id`
+            LEFT JOIN `jobs` j ON j.`id` = e.`job`
+            WHERE t.`subject` = '{$subjectId}'
+              AND (e.`job` = 81 OR LOWER(TRIM(IFNULL(j.`name`, ''))) = 'coordinator')";
+    $rs = mysqli_query($database, $sql);
+    if ($rs) {
+        while ($row = mysqli_fetch_assoc($rs)) {
+            $id = (int) $row['id'];
+            if ($id > 0) {
+                $out[$id] = $id;
+            }
+        }
+    }
+    return array_values($out);
+}
+
   
 function stage($study_year){
     if($study_year == 0 ) { $app = ' `app2_0` = 1  '; }

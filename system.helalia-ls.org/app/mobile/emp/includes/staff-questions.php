@@ -482,6 +482,12 @@ function staff_q_visible($row, $access, $empId)
     if (function_exists('check_teacher_subject') && $subject < 1000 && (int) check_teacher_subject($subject) === (int) $empId) {
         $ok++;
     }
+    // Job Coordinator: yeshof subject questions law howa cor, aw bey3alem el subject
+    if ($subject < 1000 && function_exists('staff_job_is_coordinator') && staff_job_is_coordinator($empId)) {
+        if (function_exists('staff_teaches_subject') && staff_teaches_subject($empId, $subject)) {
+            $ok++;
+        }
+    }
     if (function_exists('check_head_subject') && $subject < 1000 && (int) check_head_subject($subject) === (int) $empId) {
         $ok++;
     }

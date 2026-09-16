@@ -4,6 +4,56 @@ if (!isset($_SESSION)) {
 }
 require_once __DIR__ . '/local-request.php';
 require_once __DIR__ . '/dual-role.php';
+
+/**
+ * staff_job_is_coordinator
+ * True law el emp job title = Coordinator (jobs.id = 81)
+ * Job title bas — mesh subjects.cor
+ */
+if (!function_exists('staff_job_is_coordinator')) {
+    function staff_job_is_coordinator($empId)
+    {
+        global $database, $database_database;
+        $empId = (int) $empId;
+        if ($empId < 1 || !isset($database) || !($database instanceof mysqli)) {
+            return false;
+        }
+        if (!empty($database_database)) {
+            mysqli_select_db($database, $database_database);
+        }
+        $sql = "SELECT e.`id` FROM `emps` e
+                LEFT JOIN `jobs` j ON j.`id` = e.`job`
+                WHERE e.`id` = '{$empId}'
+                  AND (e.`job` = 81 OR LOWER(TRIM(IFNULL(j.`name`, ''))) = 'coordinator')
+                LIMIT 1";
+        $rs = mysqli_query($database, $sql);
+        return ($rs && mysqli_num_rows($rs) > 0);
+    }
+}
+
+/**
+ * staff_teaches_subject
+ * True law el emp 3ando el subject fe teachers table
+ * (benesta3melha lel Coordinator 3ashan subjects.cor mesh dayman filled)
+ */
+if (!function_exists('staff_teaches_subject')) {
+    function staff_teaches_subject($empId, $subjectId)
+    {
+        global $database, $database_database;
+        $empId = (int) $empId;
+        $subjectId = (int) $subjectId;
+        if ($empId < 1 || $subjectId < 1 || !isset($database) || !($database instanceof mysqli)) {
+            return false;
+        }
+        if (!empty($database_database)) {
+            mysqli_select_db($database, $database_database);
+        }
+        $sql = "SELECT `id` FROM `teachers` WHERE `emp_id` = '{$empId}' AND `subject` = '{$subjectId}' LIMIT 1";
+        $rs = mysqli_query($database, $sql);
+        return ($rs && mysqli_num_rows($rs) > 0);
+    }
+}
+
 dual_restore_emp_session_for_staff_boot();
 if (function_exists('helalia_require_fresh_auth')) {
     $staffInKidEarly = false;
@@ -421,9 +471,11 @@ if ($staffPreview) {
         || (function_exists('app18access') && app18access($empId) == 1);
     $showPlan = function_exists('app12access') && app12access($empId) == 1;
     $showEval = function_exists('app13access') && app13access($empId) == 1;
+    // Questions: app20 flags, OR subjects.cor/head, OR job title Coordinator
     $showQuestions = ((function_exists('app20access') && app20access($empId) > 0)
         || (function_exists('cordnator') && cordnator($empId) > 0)
-        || (function_exists('head') && head($empId) > 0));
+        || (function_exists('head') && head($empId) > 0)
+        || (function_exists('staff_job_is_coordinator') && staff_job_is_coordinator($empId)));
     $showControl = function_exists('app19access') && app19access($empId) == 1;
     $showDirectQ = function_exists('app2_access') && app2_access($empId) == 1;
     $showStaffAbs = function_exists('app4_access') && app4_access($empId) == 1;

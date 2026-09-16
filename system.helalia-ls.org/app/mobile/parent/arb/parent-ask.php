@@ -443,11 +443,17 @@ $totalRows_get_question = mysqli_num_rows($get_question);
 
             <?php   
 
-            mysqli_select_db($database , $database_database,);
-            $query_get_subjects = "SELECT * FROM `subjects` where `study_year` = '{$row_get_kid_data['study_year']}'";
-            $get_subjects =mysqli_query($database ,$query_get_subjects) or die(mysqli_error($database));
-            $row_get_subjects = mysqli_fetch_assoc($get_subjects);
-            $totalRows_get_subjects = mysqli_num_rows($get_subjects);
+            mysqli_select_db($database , $database_database);
+            // Same as old app: list this kid's year subjects under Coordinator.
+            // (Old code only opened the list if the *first* subject had cor — often empty.)
+            $ask_study_year = (int) $row_get_kid_data['study_year'];
+            $query_get_subjects = "SELECT * FROM `subjects` WHERE `study_year` = '{$ask_study_year}' ORDER BY `name` ASC, `name_eng` ASC, `id` ASC";
+            $get_subjects = mysqli_query($database, $query_get_subjects) or die(mysqli_error($database));
+            $ask_coord_subjects = array();
+            while ($row_get_subjects = mysqli_fetch_assoc($get_subjects)) {
+                $ask_coord_subjects[] = $row_get_subjects;
+            }
+            $totalRows_get_subjects = count($ask_coord_subjects);
 
 
             $query_get_check = "SELECT * FROM `emps` WHERE `app20_1`= 1 ";    
@@ -589,26 +595,35 @@ $totalRows_get_question = mysqli_num_rows($get_question);
 
         </div>
 
+        <?php if ($totalRows_get_subjects > 0) { ?>
         <ul class="collapsible">
           <li>
-            <div class="collapsible-header"><i class="fa fa-book" aria-hidden="true"></i> منسق</div>
-            <div class="collapsible-body">
-              <div class="  clients-row">
-                <?php if($totalRows_get_subjects>0 && check_teacher_subject($row_get_subjects['id'])>0){
-                        do{?>   
+            <div class="collapsible-header is-open"><i class="fa fa-book" aria-hidden="true"></i> منسق</div>
+            <div class="collapsible-body is-open">
+              <div class="clients-row">
+                <?php foreach ($ask_coord_subjects as $row_get_subjects) {
+                    $subjLabel = trim((string) $row_get_subjects['name']);
+                    if ($subjLabel === '') {
+                        $subjLabel = trim((string) $row_get_subjects['name_eng']);
+                    }
+                    if ($subjLabel === '') {
+                        $subjLabel = 'مادة #' . (int) $row_get_subjects['id'];
+                    }
+                ?>
                         <div class="col s6">
                             <div class="client-box">
-                            <a href="parent-ask-teacher.php?kid=<?php echo $kid_id;?>&subject=<?php  echo $row_get_subjects['id'];?>">
+                            <a href="parent-ask-teacher.php?kid=<?php echo $kid_id;?>&subject=<?php echo (int) $row_get_subjects['id']; ?>">
                                 <i class="fa fa-book fa-3x" aria-hidden="true"></i><br>
-                                <?php  echo $row_get_subjects['name'];?>
+                                <?php echo htmlspecialchars($subjLabel, ENT_QUOTES, 'UTF-8'); ?>
                             </a>
                             </div>
-                        </div> 
-                <?php  }while($row_get_subjects = mysqli_fetch_assoc($get_subjects)); } ?>
+                        </div>
+                <?php } ?>
               </div>
             </div>
           </li>
         </ul>
+        <?php } ?>
       </div>
     </div>
   </div>

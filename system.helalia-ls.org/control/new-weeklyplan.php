@@ -65,7 +65,7 @@ $msg ='';
                                GetSQLValueString($database,$_POST['name_eng'], "text"),  
                                GetSQLValueString($database,$_POST['study_year'], "int"),  
                                GetSQLValueString($database,$_POST['class'], "int"), //0 means all calss of the study year 
-                               GetSQLValueString($database,$_POST['subject'], "int"), 
+                               GetSQLValueString($database,0, "int"), // subject mesh required; 0 = no subject
                                GetSQLValueString($database,$_POST['text_eng'], "text"),   
                                GetSQLValueString($database,strtotime(date("m/d/Y",time())), "int"),
                                GetSQLValueString($database,strtotime(date("m/d/Y",time())), "int"), 
@@ -90,7 +90,7 @@ $msg ='';
                     $row_get_target = mysqli_fetch_assoc($get_target);
                     $totalRows_get_target = mysqli_num_rows($get_target); 
             
-                    $message  ='Weekly plan: '.subject_name($_POST['subject']);
+                    $message  ='Weekly plan';
           
                       do{       
                           if($row_get_target['parent_id']!=NULL){   sendMessage($row_get_target['phone_id'],'HLS',$message); }
@@ -222,16 +222,6 @@ $head_title = "  الخطة الاسبوعية";
                 </div>
             </div>
 
-           
-            <div class="form-group">
-                <label class="col-sm-3 control-label" for="class"> المادة الدراسية <span style="color: red;">*</span></label>
-                <div class="col-sm-4" id="study_year_subject">
-                    <select class="form-control"  name="subject" id="subject" required >
-                        <option selected></option>  
-                    </select>
-                </div>
-            </div>
-
 
             <div class="form-group">
               <label class="col-sm-3 control-label" for="start">   تاريخ    </label>
@@ -315,15 +305,6 @@ $head_title = "  الخطة الاسبوعية";
                       function(Date,status){  
                           $("#study_year_class").html(Date); 
                           $("#class").prop('required',true);
-                           
-                $.post("get_subject.php",
-                      {
-                          year:year
-                      },
-                          function(Date,status){  
-                              $("#study_year_subject").html(Date); 
-                              $("#subject").prop('required',true);
-                      });  
               });           
         });
 

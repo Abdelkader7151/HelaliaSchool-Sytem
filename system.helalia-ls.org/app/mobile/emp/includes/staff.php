@@ -1044,20 +1044,31 @@ function staff_homework_copy()
 {
     global $empId, $row_get_user, $errors;
     $errors = 0;
+    if (!isset($_FILES['picture']) || !is_array($_FILES['picture'])) {
+        return null;
+    }
+    // Upload error mn el phone (size / cancel / network)
+    $upErr = isset($_FILES['picture']['error']) ? (int) $_FILES['picture']['error'] : UPLOAD_ERR_NO_FILE;
+    if ($upErr !== UPLOAD_ERR_OK) {
+        if ($upErr !== UPLOAD_ERR_NO_FILE) {
+            $errors = 1;
+        }
+        return null;
+    }
     $image = isset($_FILES['picture']['name']) ? $_FILES['picture']['name'] : '';
     if (!$image) {
         return null;
     }
     $filename = stripslashes((string) $_FILES['picture']['name']);
     $i = strrpos($filename, '.');
-    $extension = $i ? strtolower(substr($filename, $i + 1)) : '';
-    // Weekly plan / HW / memo: PDF, Word, aw soora
+    $extension = ($i !== false) ? strtolower(substr($filename, $i + 1)) : '';
+    // jpg - png - pdf - doc (+ jpeg/docx); gif/webp ok lel HW/memo el adeem
     if (!in_array($extension, array('pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif', 'webp'), true)) {
         $errors = 1;
         return null;
     }
     $tmp = isset($_FILES['picture']['tmp_name']) ? $_FILES['picture']['tmp_name'] : '';
-    if ($tmp === '' || !is_file($tmp)) {
+    if ($tmp === '' || !is_uploaded_file($tmp)) {
         $errors = 1;
         return null;
     }
@@ -1068,7 +1079,8 @@ function staff_homework_copy()
     $eid = !empty($empId) ? (int) $empId : (int) ($row_get_user['emp_id'] ?? 0);
     $imageName = $eid . '-' . time() . '.' . $extension;
     $dest = staff_homework_dir() . DIRECTORY_SEPARATOR . $imageName;
-    if (!@copy($tmp, $dest)) {
+    // move_uploaded_file awla — a7san 3ala mobile; copy fallback
+    if (!@move_uploaded_file($tmp, $dest) && !@copy($tmp, $dest)) {
         $errors = 1;
         return null;
     }

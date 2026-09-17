@@ -592,8 +592,8 @@ function staff_upload_form($action, $subjects = array(), $fixedSubject = 0, $fil
     echo '<label class="field"><span class="field__label">' . staff_h($L['description']) . '</span>';
     echo '<textarea class="input" name="text_eng"></textarea></label>';
     echo '<label class="field"><span class="field__label">' . staff_h($L['file']) . '</span>';
-    // Zay el website: jpg - png - pdf - doc
-    echo '<input class="input" type="file" name="picture" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"' . ($fileRequired ? ' required' : '') . '></label>';
+    // jpg-png-pdf-doc: MIME + .ext (iOS + Android). Mesh image/* awwal, mesh capture=
+    echo '<input class="input" type="file" name="picture" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,image/jpeg,image/png,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"' . ($fileRequired ? ' required' : '') . '></label>';
     if ($fileHint !== '') {
         echo '<p class="tiny">' . staff_h($fileHint) . '</p>';
     }

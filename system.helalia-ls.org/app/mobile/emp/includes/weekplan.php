@@ -47,6 +47,7 @@ if ($staffLang === 'arb') {
         'year_missing' => 'لم يتم تحديد السنة الدراسية',
         'year_invalid' => 'هذه السنة الدراسية غير متاحة لحسابك',
         'upload_invalid' => 'رفع الخطة الأسبوعية غير متاح لهذا الحساب',
+        'file_bad' => 'الملف غير صالح. المسموح: jpg - png - pdf - doc',
         'class_invalid' => 'هذا الفصل غير متاح لحسابك',
         'choose_year' => 'اختر السنة الدراسية',
         'empty_years' => 'لا توجد سنوات متاحة',
@@ -76,6 +77,7 @@ if ($staffLang === 'arb') {
         'year_missing' => 'Study year was not specified',
         'year_invalid' => 'This study year is not available for your account',
         'upload_invalid' => 'Weekly plan upload is not available for your account',
+        'file_bad' => 'Invalid file. Allowed: jpg - png - pdf - doc',
         'class_invalid' => 'This class is not available for your account',
         'choose_year' => 'Choose study year',
         'empty_years' => 'No years available',
@@ -549,7 +551,13 @@ function wp_handle_upload()
     }
 
     $image_name = null;
+    $errors = 0;
     include __DIR__ . '/weekplan-up.php';
+
+    // Lazem file: jpg/png/pdf/doc — mesh save fara8
+    if (!empty($errors) || $image_name === null || $image_name === '') {
+        wp_message_page($WP['title'], $WP['file_bad'], 'plan-upload.php?year=' . $year . ($all ? '&all' : ('&class=' . $class . '&subject=' . $subject)));
+    }
 
     $name = isset($_POST['name_eng']) ? trim((string) $_POST['name_eng']) : '';
     $text = isset($_POST['text_eng']) ? trim((string) $_POST['text_eng']) : '';
@@ -635,8 +643,17 @@ function wp_page_upload()
     echo '<label class="field"><span class="field__label">' . staff_h($WP['desc_field']) . '</span>';
     echo '<textarea class="input" id="text_eng" name="text_eng"></textarea></label>';
     echo '<label class="hw-file"><span class="field__label">' . staff_h($WP['file_field']) . '</span>';
-    // Zay el website control: jpg - png - pdf - doc (PDF/Word awwal 3ashan Android)
-    echo '<input id="picture" name="picture" type="file" required accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"></label>';
+    /**
+     * accept: jpg - png - pdf - doc
+     * Extensions + MIME — iOS bey7eb MIME (Files/Photos), Android bey7eb .ext
+     * Mesh image/* awwal 3ashan Android mayfata7sh gallery bas
+     * Mesh capture= 3ashan mayfata7sh camera bas
+     */
+    echo '<input id="picture" name="picture" type="file" required '
+        . 'accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,'
+        . 'image/jpeg,image/png,application/pdf,'
+        . 'application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">'
+        . '</label>';
     echo '<p class="tiny">' . staff_h($WP['file_hint']) . '</p>';
     echo '<button class="btn btn--primary" name="submit" type="submit" data-wait="' . staff_h($WP['uploading']) . '">' . staff_h($WP['upload']) . '</button>';
     echo '</form>';

@@ -48,6 +48,8 @@ if ($staffLang === 'arb') {
         'year_invalid' => 'هذه السنة الدراسية غير متاحة لحسابك',
         'upload_invalid' => 'رفع الخطة الأسبوعية غير متاح لهذا الحساب',
         'file_bad' => 'الملف غير صالح. المسموح: jpg - png - pdf - doc',
+        'saved' => 'تم حفظ الخطة الأسبوعية',
+        'save_fail' => 'تعذر حفظ الخطة الأسبوعية. حاول مرة أخرى',
         'class_invalid' => 'هذا الفصل غير متاح لحسابك',
         'choose_year' => 'اختر السنة الدراسية',
         'empty_years' => 'لا توجد سنوات متاحة',
@@ -78,6 +80,8 @@ if ($staffLang === 'arb') {
         'year_invalid' => 'This study year is not available for your account',
         'upload_invalid' => 'Weekly plan upload is not available for your account',
         'file_bad' => 'Invalid file. Allowed: jpg - png - pdf - doc',
+        'saved' => 'Weekly plan is saved',
+        'save_fail' => 'Could not save the weekly plan. Please try again',
         'class_invalid' => 'This class is not available for your account',
         'choose_year' => 'Choose study year',
         'empty_years' => 'No years available',
@@ -331,7 +335,7 @@ function wp_insert_row($year, $class, $subject, $name, $text, $banner, $all)
             'date' => $now,
         );
         wp_preview_save($items);
-        return;
+        return true;
     }
     global $database, $database_database;
     mysqli_select_db($database, $database_database);
@@ -346,7 +350,8 @@ function wp_insert_row($year, $class, $subject, $name, $text, $banner, $all)
             . wp_sql($text, 'text') . ', ' . wp_sql($now, 'int') . ', ' . wp_sql($now, 'int') . ', '
             . wp_sql($banner, 'text') . ', ' . wp_sql(wp_emp(), 'int') . ', ' . wp_sql(wp_app(), 'int') . ')';
     }
-    mysqli_query($database, $sql) or die(mysqli_error($database));
+    $ok = mysqli_query($database, $sql);
+    return (bool) $ok;
 }
 
 function wp_delete_row($id)
@@ -496,7 +501,7 @@ function wp_item_row($row, $opts = array())
     echo '</div></div>';
 }
 
-function wp_toast_markup()
+function wp_toast_markup($flash = '')
 {
     echo '<div class="hw-toast" id="hw-toast" hidden></div>';
     echo '<script>
@@ -515,8 +520,34 @@ function wp_toast_markup()
         clearTimeout(timer);
         timer = setTimeout(function(){ t.classList.remove("is-on"); }, 2800);
       });
+      var form = document.getElementById("form_upload");
+      if (form) {
+        form.addEventListener("submit", function(){
+          var b = form.querySelector("[type=submit]");
+          if (b) b.textContent = b.getAttribute("data-wait") || "…";
+        });
+      }
     })();
     </script>';
+    // Popup ba3d save — staffShowSuccess (zay ba2i el app)
+    if ($flash !== '') {
+        $msgJs = json_encode($flash, JSON_UNESCAPED_UNICODE);
+        echo '<script>
+        window.addEventListener("load", function(){
+          if (window.staffShowSuccess) {
+            window.staffShowSuccess(' . $msgJs . ');
+          } else {
+            alert(' . $msgJs . ');
+          }
+          try {
+            var u = new URL(window.location.href);
+            u.searchParams.delete("plan_saved");
+            u.searchParams.delete("done");
+            history.replaceState(null, "", u.pathname + (u.search ? u.search : "") + u.hash);
+          } catch (e) {}
+        });
+        </script>';
+    }
 }
 
 function wp_handle_upload()
@@ -526,19 +557,14 @@ function wp_handle_upload()
     $all = isset($_GET['all']);
     $class = isset($_GET['class']) ? (int) $_GET['class'] : 0;
     $subject = isset($_GET['subject']) ? (int) $_GET['subject'] : 0;
+    $backQs = 'plan-upload.php?year=' . $year . ($all ? '&all' : ('&class=' . $class . '&subject=' . $subject));
 
     if (isset($_GET['del'])) {
         if (!wp_can_upload($year)) {
             wp_message_page($WP['title'], $WP['upload_invalid'], 'weekplan.php');
         }
         wp_delete_row((int) $_GET['del']);
-        $qs = 'plan-upload.php?year=' . $year;
-        if ($all) {
-            $qs .= '&all';
-        } else {
-            $qs .= '&class=' . $class . '&subject=' . $subject;
-        }
-        header('Location: ' . $qs . '&deleted=1');
+        header('Location: ' . $backQs . '&deleted=1');
         exit;
     }
 
@@ -556,22 +582,26 @@ function wp_handle_upload()
 
     // Lazem file: jpg/png/pdf/doc — mesh save fara8
     if (!empty($errors) || $image_name === null || $image_name === '') {
-        wp_message_page($WP['title'], $WP['file_bad'], 'plan-upload.php?year=' . $year . ($all ? '&all' : ('&class=' . $class . '&subject=' . $subject)));
+        wp_message_page($WP['title'], $WP['file_bad'], $backQs);
+    }
+
+    // Et2aked el file fe makanoh (homework folder)
+    $bannerFile = basename(str_replace('\\', '/', (string) $image_name));
+    $onDisk = wp_upload_dir() . DIRECTORY_SEPARATOR . $bannerFile;
+    if ($bannerFile === '' || !is_file($onDisk)) {
+        wp_message_page($WP['title'], $WP['save_fail'], $backQs);
     }
 
     $name = isset($_POST['name_eng']) ? trim((string) $_POST['name_eng']) : '';
     $text = isset($_POST['text_eng']) ? trim((string) $_POST['text_eng']) : '';
     $subj = isset($_POST['subject']) ? (int) $_POST['subject'] : $subject;
 
-    wp_insert_row($year, $class, $subj, $name, $text, $image_name, $all);
-
-    $qs = 'plan-upload.php?year=' . $year;
-    if ($all) {
-        $qs .= '&all';
-    } else {
-        $qs .= '&class=' . $class . '&subject=' . $subject;
+    // DB save — popup bas law etnein tamam
+    if (!wp_insert_row($year, $class, $subj, $name, $text, $bannerFile, $all)) {
+        wp_message_page($WP['title'], $WP['save_fail'], $backQs);
     }
-    header('Location: ' . $qs . '&done=1');
+
+    header('Location: ' . $backQs . '&plan_saved=1');
     exit;
 }
 
@@ -673,12 +703,9 @@ function wp_page_upload()
         }
         echo '</div>';
     }
-    wp_toast_markup();
+    wp_toast_markup(isset($_GET['plan_saved']) ? $WP['saved'] : '');
     staff_inner_end();
 }
-
-function wp_page_search()
-{
     global $WP;
     $year = wp_need_year();
     $class = isset($_GET['class']) ? (int) $_GET['class'] : 0;

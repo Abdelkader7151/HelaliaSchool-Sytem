@@ -29,7 +29,7 @@ if ($staffLang === 'arb') {
         'title_field' => 'العنوان',
         'desc_field' => 'الوصف',
         'file_field' => 'رفع ملف',
-        'file_hint' => 'ارفع ملف PDF أو Word كل خميس',
+        'file_hint' => 'PDF أو Word أو صورة (jpg/png)',
         'upload' => 'رفع',
         'search' => 'بحث',
         'date' => 'التاريخ',
@@ -58,7 +58,7 @@ if ($staffLang === 'arb') {
         'title_field' => 'Title',
         'desc_field' => 'Description',
         'file_field' => 'Upload file',
-        'file_hint' => 'Upload PDF or Word file every Thursday',
+        'file_hint' => 'PDF, Word, or photo (jpg/png)',
         'upload' => 'Upload',
         'search' => 'Search',
         'date' => 'Date',
@@ -635,7 +635,8 @@ function wp_page_upload()
     echo '<label class="field"><span class="field__label">' . staff_h($WP['desc_field']) . '</span>';
     echo '<textarea class="input" id="text_eng" name="text_eng"></textarea></label>';
     echo '<label class="hw-file"><span class="field__label">' . staff_h($WP['file_field']) . '</span>';
-    echo '<input id="picture" name="picture" type="file" required accept="image/*, .pdf, .docx"></label>';
+    // PDF/Word awwal — image/* awwal beyfata7 gallery bas 3ala Android
+    echo '<input id="picture" name="picture" type="file" required accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,application/pdf"></label>';
     echo '<p class="tiny">' . staff_h($WP['file_hint']) . '</p>';
     echo '<button class="btn btn--primary" name="submit" type="submit" data-wait="' . staff_h($WP['uploading']) . '">' . staff_h($WP['upload']) . '</button>';
     echo '</form>';

@@ -1051,7 +1051,8 @@ function staff_homework_copy()
     $filename = stripslashes((string) $_FILES['picture']['name']);
     $i = strrpos($filename, '.');
     $extension = $i ? strtolower(substr($filename, $i + 1)) : '';
-    if (!in_array($extension, array('pdf', 'docx', 'jpg', 'jpeg', 'png', 'gif'), true)) {
+    // Weekly plan / HW / memo: PDF, Word, aw soora
+    if (!in_array($extension, array('pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif', 'webp'), true)) {
         $errors = 1;
         return null;
     }

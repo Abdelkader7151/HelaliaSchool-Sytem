@@ -38,7 +38,7 @@ function staff_tool_strings()
             'download' => 'تنزيل',
             'title' => 'العنوان',
             'description' => 'الوصف',
-            'file' => 'ملف PDF أو Word',
+            'file' => 'ملف PDF أو Word أو صورة',
             'date' => 'التاريخ',
             'today' => 'اليوم',
             'no_items' => 'لا توجد عناصر',
@@ -58,7 +58,7 @@ function staff_tool_strings()
             'revision_uploaded' => 'المراجعة المرفوعة',
             'memo_add' => 'رفع مذكرة',
             'memo_uploaded' => 'المذكرات المرفوعة',
-            'plan_file' => 'ارفع ملف PDF أو Word كل خميس',
+            'plan_file' => 'PDF أو Word أو صورة (jpg/png)',
             'search_on' => 'بحث بتاريخ',
             'preview_note' => 'عرض تجريبي — بدون قاعدة بيانات',
             'empty_years' => 'لا توجد سنوات متاحة',
@@ -84,7 +84,7 @@ function staff_tool_strings()
         'download' => 'Download',
         'title' => 'Title',
         'description' => 'Description',
-        'file' => 'PDF or Word file',
+        'file' => 'PDF, Word, or photo',
         'date' => 'Date',
         'today' => 'Today',
         'no_items' => 'Nothing here yet',
@@ -104,7 +104,7 @@ function staff_tool_strings()
         'revision_uploaded' => 'Revision uploaded',
         'memo_add' => 'Memo',
         'memo_uploaded' => 'Memo uploaded',
-        'plan_file' => 'Upload PDF or Word file every Thursday',
+        'plan_file' => 'PDF, Word, or photo (jpg/png)',
         'search_on' => 'Search on',
         'preview_note' => 'Preview — no database connected',
         'empty_years' => 'No years available',
@@ -592,7 +592,8 @@ function staff_upload_form($action, $subjects = array(), $fixedSubject = 0, $fil
     echo '<label class="field"><span class="field__label">' . staff_h($L['description']) . '</span>';
     echo '<textarea class="input" name="text_eng"></textarea></label>';
     echo '<label class="field"><span class="field__label">' . staff_h($L['file']) . '</span>';
-    echo '<input class="input" type="file" name="picture" accept="image/*,.pdf,.docx"' . ($fileRequired ? ' required' : '') . '></label>';
+    // PDF/Word awwal — mesh image/* awwal (Android beyfata7 photos bas)
+    echo '<input class="input" type="file" name="picture" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,application/pdf"' . ($fileRequired ? ' required' : '') . '></label>';
     if ($fileHint !== '') {
         echo '<p class="tiny">' . staff_h($fileHint) . '</p>';
     }

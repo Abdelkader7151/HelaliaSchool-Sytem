@@ -241,7 +241,7 @@ $head_title = "  الخطة الاسبوعية";
             <div class="form-group">
               <label class="col-sm-3 control-label" for="picture">  تحميل </label>
               <div class="col-sm-4">
-                <input id="picture" class="form-control"   type="file" name="picture" accept=".pdf,.docx,jpg,png,jpeg">
+                <input id="picture" class="form-control"   type="file" name="picture" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
                 <small>jpg - png - pdf - doc </small>
               </div>
 					  </div> 

@@ -29,7 +29,7 @@ if ($staffLang === 'arb') {
         'title_field' => 'العنوان',
         'desc_field' => 'الوصف',
         'file_field' => 'رفع ملف',
-        'file_hint' => 'PDF أو Word أو صورة (jpg/png)',
+        'file_hint' => 'jpg - png - pdf - doc',
         'upload' => 'رفع',
         'search' => 'بحث',
         'date' => 'التاريخ',
@@ -58,7 +58,7 @@ if ($staffLang === 'arb') {
         'title_field' => 'Title',
         'desc_field' => 'Description',
         'file_field' => 'Upload file',
-        'file_hint' => 'PDF, Word, or photo (jpg/png)',
+        'file_hint' => 'jpg - png - pdf - doc',
         'upload' => 'Upload',
         'search' => 'Search',
         'date' => 'Date',
@@ -635,8 +635,8 @@ function wp_page_upload()
     echo '<label class="field"><span class="field__label">' . staff_h($WP['desc_field']) . '</span>';
     echo '<textarea class="input" id="text_eng" name="text_eng"></textarea></label>';
     echo '<label class="hw-file"><span class="field__label">' . staff_h($WP['file_field']) . '</span>';
-    // PDF/Word awwal — image/* awwal beyfata7 gallery bas 3ala Android
-    echo '<input id="picture" name="picture" type="file" required accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,application/pdf"></label>';
+    // Zay el website control: jpg - png - pdf - doc (PDF/Word awwal 3ashan Android)
+    echo '<input id="picture" name="picture" type="file" required accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"></label>';
     echo '<p class="tiny">' . staff_h($WP['file_hint']) . '</p>';
     echo '<button class="btn btn--primary" name="submit" type="submit" data-wait="' . staff_h($WP['uploading']) . '">' . staff_h($WP['upload']) . '</button>';
     echo '</form>';

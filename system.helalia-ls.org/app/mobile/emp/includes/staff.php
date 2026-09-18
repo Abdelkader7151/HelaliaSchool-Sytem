@@ -195,7 +195,7 @@ if ($staffPreview) {
     $photoUrl = staff_photo_url($row_get_user);
     $old = 'https://system.helalia-ls.org/app/old/' . $staffLang . '/';
     $css = '../assets/css/helalia.css';
-    $extraCss = '../assets/css/staff.css?v=70';
+    $extraCss = '../assets/css/staff.css?v=71';
     $js = '../assets/js/staff.js?v=17';
     $icon = '../assets/img/logo-icon.png';
     $logo = '../assets/img/logo.png';
@@ -451,7 +451,7 @@ if ($staffPreview) {
 
     $old = 'https://system.helalia-ls.org/app/old/' . $staffLang . '/';
     $css = '../assets/css/helalia.css';
-    $extraCss = '../assets/css/staff.css?v=70';
+    $extraCss = '../assets/css/staff.css?v=71';
     $js = '../assets/js/staff.js?v=17';
     $icon = '../assets/img/logo-icon.png';
     $logo = '../assets/img/logo.png';

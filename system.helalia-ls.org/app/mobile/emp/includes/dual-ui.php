@@ -184,6 +184,7 @@ function dual_render_choose()
     echo '<span class="rolecard__body"><strong>' . staff_h($L['role_parent']) . '</strong></span>';
     echo '</button>';
     echo '</form>';
+    echo '<a class="btn rolepick__signout" href="choose-role.php?exit=1">' . staff_ico('logout') . '<span>' . staff_h($L['exit']) . '</span></a>';
     echo '</main>';
     staff_nav('role');
 }

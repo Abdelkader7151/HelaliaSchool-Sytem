@@ -1927,6 +1927,34 @@ fieldset.radios legend { margin-block-end: 6px; }
   color: var(--gold);
 }
 .rolecard__go { display: none; }
+.rolepick__signout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  max-inline-size: 360px;
+  margin: 28px auto 8px;
+  padding: 14px 18px;
+  border: 0;
+  border-radius: var(--r-md);
+  color: #fff;
+  background: #e23b3b;
+  font: inherit;
+  font-weight: 800;
+  font-size: var(--fs-md);
+  text-decoration: none;
+  box-shadow: 0 8px 18px rgb(226 59 59 / .28);
+  cursor: pointer;
+}
+.rolepick__signout svg {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+.rolepick__signout:active {
+  background: #c62828;
+}
 .rolepick__kids {
   display: flex;
   flex-wrap: wrap;

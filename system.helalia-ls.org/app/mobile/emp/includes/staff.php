@@ -197,8 +197,8 @@ if ($staffPreview) {
     $photoUrl = staff_photo_url($row_get_user);
     $old = 'https://system.helalia-ls.org/app/old/' . $staffLang . '/';
     $css = '../assets/css/helalia.css';
-    $extraCss = '../assets/css/staff.css?v=74';
-    $js = '../assets/js/staff.js?v=20';
+    $extraCss = '../assets/css/staff.css?v=75';
+    $js = '../assets/js/staff.js?v=21';
     $icon = '../assets/img/logo-icon.png';
     $logo = '../assets/img/logo.png';
     $showStudent = $showHomework = $showRevision = $showMemo = true;
@@ -480,8 +480,8 @@ if ($staffPreview) {
 
     $old = 'https://system.helalia-ls.org/app/old/' . $staffLang . '/';
     $css = '../assets/css/helalia.css';
-    $extraCss = '../assets/css/staff.css?v=74';
-    $js = '../assets/js/staff.js?v=20';
+    $extraCss = '../assets/css/staff.css?v=75';
+    $js = '../assets/js/staff.js?v=21';
     $icon = '../assets/img/logo-icon.png';
     $logo = '../assets/img/logo.png';
     $parentCss = $mobileRoot . '/parent/assets/css/helalia.css';
@@ -687,8 +687,13 @@ if ($staffLang === 'arb') {
         'st_canceled' => 'ملغي',
         'empty_list' => 'لا يوجد شيء للعرض',
         'change_photo' => 'تغيير الصورة',
+        'photo_confirm_title' => 'حفظ الصورة؟',
+        'photo_confirm_hint' => 'اضغط حفظ لرفع الصورة إلى حسابك',
+        'photo_confirm_save' => 'حفظ الصورة',
+        'photo_confirm_cancel' => 'إلغاء',
+        'photo_saving' => 'جاري حفظ الصورة…',
         'photo_saved' => 'تم حفظ صورة الملف الشخصي بنجاح',
-        'photo_failed' => 'تعذر حفظ الصورة. حاول مرة أخرى.',
+        'photo_failed' => 'تعذر حفظ الصورة. حاول مرة أخرى بصورة JPG أو PNG.',
         'password_label' => 'كلمة المرور',
         'day_one' => 'يوم',
         'day_many' => 'أيام',
@@ -932,8 +937,13 @@ if ($staffLang === 'arb') {
         'st_canceled' => 'Canceled',
         'empty_list' => 'Nothing to show yet',
         'change_photo' => 'Change picture',
+        'photo_confirm_title' => 'Save this photo?',
+        'photo_confirm_hint' => 'Tap Save to upload it to your profile',
+        'photo_confirm_save' => 'Save photo',
+        'photo_confirm_cancel' => 'Cancel',
+        'photo_saving' => 'Saving photo…',
         'photo_saved' => 'Your profile photo has been saved',
-        'photo_failed' => 'Could not save the photo. Please try again.',
+        'photo_failed' => 'Could not save the photo. Try again with a JPG or PNG.',
         'password_label' => 'Password',
         'day_one' => 'Day',
         'day_many' => 'Days',
@@ -1126,7 +1136,14 @@ function staff_photo_url($row)
     $pic = trim((string) ($row['picture'] ?? ''));
     if ($pic !== '' && strcasecmp($pic, 'null') !== 0) {
         $pic = basename(str_replace('\\', '/', $pic));
-        return $uploads . rawurlencode($pic);
+        $url = $uploads . rawurlencode($pic);
+        // Cache-bust ba3d save gdeed
+        if (preg_match('/-(\d+)\./', $pic, $m)) {
+            $url .= '?v=' . $m[1];
+        } elseif (isset($_GET['v'])) {
+            $url .= '?v=' . rawurlencode((string) $_GET['v']);
+        }
+        return $url;
     }
     $gender = (string) ($row['gender'] ?? '1');
     if ($gender !== '1' && $gender !== '2') {
@@ -1287,6 +1304,7 @@ function staff_action_shell()
         'confirmed' => $L['action_confirmed'],
         'working' => $L['action_working'],
         'photo_saved' => $L['photo_saved'],
+        'photo_saving' => $L['photo_saving'],
     ), JSON_UNESCAPED_UNICODE) . ';</script>';
 }
 

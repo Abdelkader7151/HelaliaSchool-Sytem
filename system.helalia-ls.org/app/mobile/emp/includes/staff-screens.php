@@ -50,9 +50,135 @@ function staff_site_dir($folder)
     return $real ? $real : $dir;
 }
 
+/**
+ * staff_uploads_dir
+ * Public site uploads/ — same folder staff_photo_url serves
+ */
 function staff_uploads_dir()
 {
-    return staff_site_dir('uploads');
+    $dir = staff_site_dir('uploads');
+    if ($dir !== '' && is_dir($dir) && is_writable($dir)) {
+        return $dir;
+    }
+    // Fallbacks law path resolution e5talaf 3ala el host
+    $candidates = array(
+        dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'uploads',
+        (isset($_SERVER['DOCUMENT_ROOT']) ? rtrim((string) $_SERVER['DOCUMENT_ROOT'], '/\\') . DIRECTORY_SEPARATOR . 'uploads' : ''),
+    );
+    foreach ($candidates as $c) {
+        if ($c === '') {
+            continue;
+        }
+        if (!is_dir($c)) {
+            @mkdir($c, 0775, true);
+        }
+        $real = realpath($c);
+        if ($real && is_writable($real)) {
+            return $real;
+        }
+    }
+    return $dir;
+}
+
+/**
+ * staff_upload_picture
+ * Save profile photo fe site uploads/ as jpg (phone-friendly)
+ * Returns new filename OR '' law fashal (mesh old name — caller ye3raf)
+ */
+function staff_upload_picture($userId, $oldName)
+{
+    $keep = basename(str_replace('\\', '/', (string) $oldName));
+    if (empty($_FILES['picture']) || !is_array($_FILES['picture'])) {
+        return '';
+    }
+    $upErr = isset($_FILES['picture']['error']) ? (int) $_FILES['picture']['error'] : UPLOAD_ERR_NO_FILE;
+    if ($upErr !== UPLOAD_ERR_OK) {
+        return '';
+    }
+    if (empty($_FILES['picture']['tmp_name']) || empty($_FILES['picture']['name'])) {
+        return '';
+    }
+    $filename = stripslashes((string) $_FILES['picture']['name']);
+    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+    if ($ext === 'jpeg') {
+        $ext = 'jpg';
+    }
+    // Accept common phone formats; we re-encode to jpg when GD can
+    if ($ext !== '' && !in_array($ext, array('jpg', 'png', 'gif', 'webp', 'heic', 'heif'), true)) {
+        return '';
+    }
+    $tmp = $_FILES['picture']['tmp_name'];
+    // is_uploaded_file preferred; copy fallback law host gharib
+    $validUpload = is_uploaded_file($tmp) || (is_file($tmp) && filesize($tmp) > 0);
+    if (!$validUpload) {
+        return '';
+    }
+    if (filesize($tmp) / 1000 > 80000) {
+        return '';
+    }
+    $dir = staff_uploads_dir();
+    if ($dir === '' || !is_dir($dir)) {
+        return '';
+    }
+    $img = null;
+    $mime = '';
+    if (function_exists('getimagesize')) {
+        $info = @getimagesize($tmp);
+        if ($info && !empty($info['mime'])) {
+            $mime = (string) $info['mime'];
+        }
+    }
+    if ($mime === 'image/jpeg' && function_exists('imagecreatefromjpeg')) {
+        $img = @imagecreatefromjpeg($tmp);
+    } elseif ($mime === 'image/png' && function_exists('imagecreatefrompng')) {
+        $img = @imagecreatefrompng($tmp);
+    } elseif ($mime === 'image/gif' && function_exists('imagecreatefromgif')) {
+        $img = @imagecreatefromgif($tmp);
+    } elseif ($mime === 'image/webp' && function_exists('imagecreatefromwebp')) {
+        $img = @imagecreatefromwebp($tmp);
+    }
+    $imageName = (int) $userId . '-' . time() . '.jpg';
+    // app_login.picture was VARCHAR(25) — keep filename short
+    if (strlen($imageName) > 25) {
+        $imageName = (int) $userId . '-' . substr((string) time(), -8) . '.jpg';
+    }
+    $dest = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR . $imageName;
+    $wrote = false;
+    if ($img && function_exists('imagejpeg')) {
+        if (function_exists('imagepalettetotruecolor')) {
+            @imagepalettetotruecolor($img);
+        }
+        if (function_exists('imagealphablending')) {
+            @imagealphablending($img, true);
+        }
+        if (function_exists('imagesavealpha')) {
+            @imagesavealpha($img, false);
+        }
+        $wrote = @imagejpeg($img, $dest, 82);
+        imagedestroy($img);
+    }
+    if (!$wrote) {
+        // Fallback: keep original extension law mesh GD
+        $fallbackExt = in_array($ext, array('jpg', 'png', 'gif', 'webp'), true) ? $ext : 'jpg';
+        $imageName = (int) $userId . '-' . time() . '.' . $fallbackExt;
+        $dest = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR . $imageName;
+        if (is_uploaded_file($tmp)) {
+            $wrote = @move_uploaded_file($tmp, $dest);
+        }
+        if (!$wrote) {
+            $wrote = @copy($tmp, $dest);
+        }
+    }
+    if (!$wrote || !is_file($dest) || filesize($dest) < 1) {
+        return '';
+    }
+    if ($keep !== '' && stripos($keep, 'no-picture-') !== 0 && $keep !== $imageName) {
+        $oldPath = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR . $keep;
+        if (is_file($oldPath)) {
+            @unlink($oldPath);
+        }
+    }
+    return $imageName;
 }
 
 function staff_attachments_dir()
@@ -142,82 +268,6 @@ function staff_notify_emps($appCol, $message)
     foreach ($rows as $row) {
         sendMessage(app_msg_id2($row['id']), 'HLS', $message);
     }
-}
-
-/**
- * staff_upload_picture
- * Save profile photo fe site uploads/ (same URL staff_photo_url)
- * jpg/png/gif bas — zay el system el adeem
- */
-function staff_upload_picture($userId, $oldName)
-{
-    $keep = basename(str_replace('\\', '/', (string) $oldName));
-    if (empty($_FILES['picture']['name']) || empty($_FILES['picture']['tmp_name'])) {
-        return $keep;
-    }
-    if (!empty($_FILES['picture']['error']) && (int) $_FILES['picture']['error'] !== UPLOAD_ERR_OK) {
-        return $keep;
-    }
-    $filename = stripslashes((string) $_FILES['picture']['name']);
-    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-    if ($ext === 'jpeg') {
-        $ext = 'jpg';
-    }
-    if (!in_array($ext, array('jpg', 'png', 'gif'), true)) {
-        return $keep;
-    }
-    $tmp = $_FILES['picture']['tmp_name'];
-    if (!is_uploaded_file($tmp)) {
-        return $keep;
-    }
-    if (filesize($tmp) / 1000 > 80000) {
-        return $keep;
-    }
-    $dir = staff_uploads_dir();
-    if ($dir === '' || !is_dir($dir)) {
-        return $keep;
-    }
-    // Recompress to jpg law momken (asghar 3ala el phone)
-    $outExt = $ext;
-    $img = null;
-    if (function_exists('getimagesize')) {
-        $info = @getimagesize($tmp);
-        if ($info && !empty($info['mime'])) {
-            if ($info['mime'] === 'image/jpeg' && function_exists('imagecreatefromjpeg')) {
-                $img = @imagecreatefromjpeg($tmp);
-            } elseif ($info['mime'] === 'image/png' && function_exists('imagecreatefrompng')) {
-                $img = @imagecreatefrompng($tmp);
-            } elseif ($info['mime'] === 'image/gif' && function_exists('imagecreatefromgif')) {
-                $img = @imagecreatefromgif($tmp);
-            }
-        }
-    }
-    if ($img && function_exists('imagejpeg')) {
-        $outExt = 'jpg';
-    }
-    $imageName = (int) $userId . '-' . time() . '.' . $outExt;
-    $dest = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR . $imageName;
-    $wrote = false;
-    if ($img && function_exists('imagejpeg')) {
-        $wrote = @imagejpeg($img, $dest, 70);
-        imagedestroy($img);
-    }
-    if (!$wrote) {
-        $wrote = @move_uploaded_file($tmp, $dest);
-    }
-    if (!$wrote) {
-        $wrote = @copy($tmp, $dest);
-    }
-    if (!$wrote || !is_file($dest)) {
-        return $keep;
-    }
-    if ($keep !== '' && stripos($keep, 'no-picture-') !== 0 && $keep !== $imageName) {
-        $oldPath = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR . $keep;
-        if (is_file($oldPath)) {
-            @unlink($oldPath);
-        }
-    }
-    return $imageName;
 }
 
 function staff_upload_sick_note()
@@ -533,50 +583,66 @@ function staff_picture_on_disk($imageName)
 function staff_boot_profile()
 {
     global $database, $database_database, $row_get_user;
-    if (!isset($_POST['submit'])) {
+    $tryingPhoto = !empty($_FILES['picture']['name'])
+        && !empty($_FILES['picture']['tmp_name'])
+        && (int) ($_FILES['picture']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK;
+    // JS form.submit() does NOT send the submit button — accept photo POST too
+    if (!isset($_POST['submit']) && !$tryingPhoto) {
         return;
     }
     $name = isset($_POST['name']) ? trim((string) $_POST['name']) : '';
     $email = isset($_POST['email']) ? trim((string) $_POST['email']) : '';
-    $tryingPhoto = !empty($_FILES['picture']['name'])
-        && !empty($_FILES['picture']['tmp_name'])
-        && (int) ($_FILES['picture']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK;
+    if ($name === '' && isset($row_get_user['name'])) {
+        $name = trim((string) $row_get_user['name']);
+    }
+    if ($email === '' && isset($row_get_user['email'])) {
+        $email = trim((string) $row_get_user['email']);
+    }
     if (staff_vac_store_mode()) {
         $_SESSION['staff_preview_user'] = array('name' => $name, 'email' => $email);
-        // Preview mesh DB — mafeesh photo success popup
-        header('Location: profile.php?done=1');
+        header('Location: profile.php?' . ($tryingPhoto ? 'photo_err=1' : 'done=1'));
         exit;
     }
-    // Keep current DB picture law upload fashal — mesh NULL
     $oldImg = isset($_POST['old_img']) ? (string) $_POST['old_img'] : '';
     if ($oldImg === '' || strcasecmp($oldImg, 'null') === 0) {
         $oldImg = isset($row_get_user['picture']) ? (string) $row_get_user['picture'] : '';
     }
     $oldBase = basename(str_replace('\\', '/', $oldImg));
-    $imageName = staff_upload_picture((int) $row_get_user['id'], $oldImg);
+    $uploadedName = '';
+    if ($tryingPhoto) {
+        $uploadedName = staff_upload_picture((int) $row_get_user['id'], $oldImg);
+    }
+    $imageName = ($uploadedName !== '') ? $uploadedName : $oldImg;
     if ($imageName === '' || strcasecmp($imageName, 'null') === 0) {
         $imageName = $oldImg;
     }
     mysqli_select_db($database, $database_database);
-    if ($imageName !== '' && strcasecmp($imageName, 'null') !== 0) {
+    $uid = (int) $row_get_user['id'];
+    if ($tryingPhoto && $uploadedName !== '') {
         $updateSQL1 = sprintf(
             "UPDATE `app_login` SET `name`=%s, `email`=%s, `picture`=%s WHERE `id`=%s",
             staff_sql($name, 'text'),
             staff_sql($email, 'text'),
-            staff_sql($imageName, 'text'),
-            staff_sql($row_get_user['id'], 'int')
+            staff_sql($uploadedName, 'text'),
+            staff_sql($uid, 'int')
         );
-    } else {
-        // Mesh temsa7 picture law mafish soora gdeeda
+    } elseif (!$tryingPhoto) {
         $updateSQL1 = sprintf(
             "UPDATE `app_login` SET `name`=%s, `email`=%s WHERE `id`=%s",
             staff_sql($name, 'text'),
             staff_sql($email, 'text'),
-            staff_sql($row_get_user['id'], 'int')
+            staff_sql($uid, 'int')
+        );
+    } else {
+        // Photo attempted but upload failed — don't wipe DB picture
+        $updateSQL1 = sprintf(
+            "UPDATE `app_login` SET `name`=%s, `email`=%s WHERE `id`=%s",
+            staff_sql($name, 'text'),
+            staff_sql($email, 'text'),
+            staff_sql($uid, 'int')
         );
     }
     mysqli_query($database, $updateSQL1);
-    $uid = (int) $row_get_user['id'];
     $kids = staff_fetch("SELECT * FROM `kids_list` WHERE `parent_id` = '{$uid}'");
     foreach ($kids as $kid) {
         $updateSQL2 = sprintf(
@@ -586,27 +652,28 @@ function staff_boot_profile()
         );
         mysqli_query($database, $updateSQL2);
     }
-    // Photo flow: popup bas law DB + file OK
     if ($tryingPhoto) {
-        $want = basename(str_replace('\\', '/', (string) $imageName));
+        $want = ($uploadedName !== '') ? basename(str_replace('\\', '/', $uploadedName)) : '';
         $dbRows = staff_fetch("SELECT `picture` FROM `app_login` WHERE `id` = '{$uid}' LIMIT 1");
         $dbPic = isset($dbRows[0]['picture'])
             ? basename(str_replace('\\', '/', (string) $dbRows[0]['picture']))
             : '';
         $ok = ($want !== ''
-            && strcasecmp($want, $oldBase) !== 0
             && $dbPic === $want
             && staff_picture_on_disk($want));
+        // Also verify public URL reachable when possible
         if ($ok) {
+            $url = 'https://system.helalia-ls.org/uploads/' . rawurlencode($want);
+            $hdrs = @get_headers($url);
+            if (is_array($hdrs) && isset($hdrs[0]) && strpos($hdrs[0], '200') === false && strpos($hdrs[0], '304') === false) {
+                // File on disk but web miss — still OK if disk+DB match (CDN delay)
+            }
             $row_get_user['picture'] = $want;
-            header('Location: profile.php?photo=1');
+            header('Location: profile.php?photo=1&v=' . time());
         } else {
             header('Location: profile.php?photo_err=1');
         }
         exit;
-    }
-    if ($imageName !== '' && strcasecmp($imageName, 'null') !== 0) {
-        $row_get_user['picture'] = $imageName;
     }
     header('Location: profile.php?done=1');
     exit;
@@ -751,12 +818,23 @@ function staff_render_profile()
 
     if ($canPic) {
         echo '<form action="profile.php" method="post" enctype="multipart/form-data" hidden data-photo-save>';
-        echo '<input type="file" id="picture" name="picture" accept="image/jpeg,image/png,image/gif,.jpg,.jpeg,.png,.gif" hidden data-photo-input>';
+        echo '<input type="hidden" name="submit" value="1">';
+        echo '<input type="file" id="picture" name="picture" accept="image/*,image/jpeg,image/png,image/gif,image/webp,.jpg,.jpeg,.png,.gif,.webp" hidden data-photo-input>';
         echo '<input type="hidden" name="old_img" value="' . staff_h($oldPic) . '">';
         echo '<input type="hidden" name="name" value="' . staff_h($name) . '">';
         echo '<input type="hidden" name="email" value="' . staff_h($email) . '">';
-        echo '<button type="submit" name="submit" value="1"></button>';
         echo '</form>';
+        // Confirm sheet — preview then Save (real button → POST submit field)
+        echo '<div class="photo-confirm" id="photo-confirm" hidden aria-hidden="true" data-photo-confirm>';
+        echo '<div class="photo-confirm__veil" data-photo-cancel tabindex="-1"></div>';
+        echo '<div class="photo-confirm__panel" role="dialog" aria-modal="true" aria-labelledby="photo-confirm-title">';
+        echo '<h2 class="photo-confirm__title" id="photo-confirm-title">' . staff_h($L['photo_confirm_title']) . '</h2>';
+        echo '<p class="photo-confirm__hint">' . staff_h($L['photo_confirm_hint']) . '</p>';
+        echo '<div class="photo-confirm__preview"><img alt="" data-photo-preview></div>';
+        echo '<div class="photo-confirm__actions">';
+        echo '<button class="btn btn--ghost" type="button" data-photo-cancel>' . staff_h($L['photo_confirm_cancel']) . '</button>';
+        echo '<button class="btn btn--primary" type="button" data-photo-save-btn data-wait="' . staff_h($L['photo_saving']) . '">' . staff_h($L['photo_confirm_save']) . '</button>';
+        echo '</div></div></div>';
     }
     echo '</section>';
 }

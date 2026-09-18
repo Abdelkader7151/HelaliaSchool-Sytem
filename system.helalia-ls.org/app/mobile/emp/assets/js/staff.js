@@ -149,27 +149,148 @@
   var triggers = document.querySelectorAll('[data-photo-trigger]');
   var input = document.querySelector('[data-photo-input]');
   var img = document.querySelector('[data-photo-img]');
-  if (triggers.length && input) {
-    triggers.forEach(function (trigger) {
-      trigger.addEventListener('click', function () {
-        input.click();
-      });
+  var form = document.querySelector('form[data-photo-save]');
+  var sheet = document.querySelector('[data-photo-confirm]');
+  if (!triggers.length || !input || !form) return;
+
+  var preview = sheet ? sheet.querySelector('[data-photo-preview]') : null;
+  var btnSave = sheet ? sheet.querySelector('[data-photo-save-btn]') : null;
+  var pendingFile = null;
+  var msgs = window.__staffActionMsgs || {};
+
+  function openSheet() {
+    if (!sheet) return;
+    sheet.hidden = false;
+    sheet.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSheet() {
+    if (!sheet) return;
+    sheet.hidden = true;
+    sheet.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    pendingFile = null;
+    input.value = '';
+  }
+
+  /**
+   * toJpegBlob — phone HEIC/PNG → jpg 2abl el upload
+   */
+  function toJpegBlob(file, done) {
+    if (!file) {
+      done(null);
+      return;
+    }
+    if (file.type === 'image/jpeg' && file.size < 900000) {
+      done(file);
+      return;
+    }
+    var url = URL.createObjectURL(file);
+    var image = new Image();
+    image.onload = function () {
+      var max = 1280;
+      var w = image.naturalWidth || image.width;
+      var h = image.naturalHeight || image.height;
+      if (!w || !h) {
+        URL.revokeObjectURL(url);
+        done(file);
+        return;
+      }
+      var scale = Math.min(1, max / Math.max(w, h));
+      var cw = Math.max(1, Math.round(w * scale));
+      var ch = Math.max(1, Math.round(h * scale));
+      var canvas = document.createElement('canvas');
+      canvas.width = cw;
+      canvas.height = ch;
+      var ctx = canvas.getContext('2d');
+      if (!ctx) {
+        URL.revokeObjectURL(url);
+        done(file);
+        return;
+      }
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, cw, ch);
+      ctx.drawImage(image, 0, 0, cw, ch);
+      URL.revokeObjectURL(url);
+      if (canvas.toBlob) {
+        canvas.toBlob(function (blob) {
+          if (!blob) {
+            done(file);
+            return;
+          }
+          done(new File([blob], 'profile.jpg', { type: 'image/jpeg' }));
+        }, 'image/jpeg', 0.85);
+      } else {
+        done(file);
+      }
+    };
+    image.onerror = function () {
+      URL.revokeObjectURL(url);
+      done(file);
+    };
+    image.src = url;
+  }
+
+  triggers.forEach(function (trigger) {
+    trigger.addEventListener('click', function () {
+      input.click();
     });
-    input.addEventListener('change', function () {
-      var file = input.files && input.files[0];
-      if (file && img && window.FileReader) {
-        var reader = new FileReader();
-        reader.onload = function (e) {
-          img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      }
-      var form = input.closest('form[data-photo-save]');
-      if (file && form) {
-        form.submit();
-      }
+  });
+
+  if (sheet) {
+    sheet.querySelectorAll('[data-photo-cancel]').forEach(function (el) {
+      el.addEventListener('click', closeSheet);
     });
   }
+
+  input.addEventListener('change', function () {
+    var file = input.files && input.files[0];
+    if (!file) return;
+    pendingFile = file;
+    if (preview && window.FileReader) {
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        preview.src = e.target.result;
+        if (img) img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    if (sheet) openSheet();
+    else {
+      // No confirm UI — submit with hidden submit field present
+      if (window.staffShowWorking) {
+        window.staffShowWorking(true, msgs.photo_saving || msgs.working);
+      }
+      form.submit();
+    }
+  });
+
+  if (btnSave) {
+    btnSave.addEventListener('click', function () {
+      if (!pendingFile) return;
+      btnSave.disabled = true;
+      var wait = btnSave.getAttribute('data-wait');
+      if (wait) btnSave.textContent = wait;
+      if (window.staffShowWorking) {
+        window.staffShowWorking(true, msgs.photo_saving || msgs.working || wait);
+      }
+      toJpegBlob(pendingFile, function (out) {
+        var file = out || pendingFile;
+        try {
+          var dt = new DataTransfer();
+          dt.items.add(file);
+          input.files = dt.files;
+        } catch (e) {
+          // Keep original input.files from picker
+        }
+        form.submit();
+      });
+    });
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && sheet && !sheet.hidden) closeSheet();
+  });
 })();
 
 (function () {

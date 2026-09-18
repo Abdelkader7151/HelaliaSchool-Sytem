@@ -1436,6 +1436,95 @@ fieldset.field { border: 0; }
   font-size: .78rem;
   font-weight: 800;
 }
+
+/* Profile photo crop sheet */
+.photo-crop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: end center;
+  padding: 0;
+}
+.photo-crop[hidden] { display: none !important; }
+.photo-crop__veil {
+  position: absolute;
+  inset: 0;
+  background: rgb(17 44 90 / .55);
+}
+.photo-crop__panel {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 420px);
+  max-height: min(92vh, 720px);
+  margin: 0 auto;
+  padding: 18px 16px 20px;
+  border-radius: 22px 22px 0 0;
+  background: #fff;
+  box-shadow: 0 -12px 40px rgb(17 44 90 / .25);
+  display: grid;
+  gap: 12px;
+}
+.photo-crop__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--navy);
+  text-align: center;
+}
+.photo-crop__hint {
+  margin: 0;
+  font-size: .82rem;
+  color: var(--ink-3);
+  text-align: center;
+}
+.photo-crop__stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 52vh;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #1a2740;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+.photo-crop__img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: none;
+  pointer-events: none;
+  will-change: left, top, width, height;
+}
+.photo-crop__mask {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle closest-side,
+    transparent calc(44% - 1px),
+    rgb(0 0 0 / .55) 44%
+  );
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / .25);
+}
+.photo-crop__zoom {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+.photo-crop__zoom .btn {
+  min-width: 48px;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+.photo-crop__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
 .prof-card { padding: 16px; }
 .prof-card__kicker {
   margin: 0 0 12px;

@@ -513,6 +513,23 @@ function staff_profile_fact($label, $value)
     echo '</div>';
 }
 
+/**
+ * staff_picture_on_disk
+ * Et2aked el soora mawgoda fe uploads/ — lazem 2abl success popup
+ */
+function staff_picture_on_disk($imageName)
+{
+    $name = basename(str_replace('\\', '/', (string) $imageName));
+    if ($name === '' || strcasecmp($name, 'null') === 0) {
+        return false;
+    }
+    $dir = staff_uploads_dir();
+    if ($dir === '') {
+        return false;
+    }
+    return is_file(rtrim($dir, '/\\') . DIRECTORY_SEPARATOR . $name);
+}
+
 function staff_boot_profile()
 {
     global $database, $database_database, $row_get_user;
@@ -521,8 +538,12 @@ function staff_boot_profile()
     }
     $name = isset($_POST['name']) ? trim((string) $_POST['name']) : '';
     $email = isset($_POST['email']) ? trim((string) $_POST['email']) : '';
+    $tryingPhoto = !empty($_FILES['picture']['name'])
+        && !empty($_FILES['picture']['tmp_name'])
+        && (int) ($_FILES['picture']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK;
     if (staff_vac_store_mode()) {
         $_SESSION['staff_preview_user'] = array('name' => $name, 'email' => $email);
+        // Preview mesh DB — mafeesh photo success popup
         header('Location: profile.php?done=1');
         exit;
     }
@@ -531,6 +552,7 @@ function staff_boot_profile()
     if ($oldImg === '' || strcasecmp($oldImg, 'null') === 0) {
         $oldImg = isset($row_get_user['picture']) ? (string) $row_get_user['picture'] : '';
     }
+    $oldBase = basename(str_replace('\\', '/', $oldImg));
     $imageName = staff_upload_picture((int) $row_get_user['id'], $oldImg);
     if ($imageName === '' || strcasecmp($imageName, 'null') === 0) {
         $imageName = $oldImg;
@@ -564,7 +586,25 @@ function staff_boot_profile()
         );
         mysqli_query($database, $updateSQL2);
     }
-    // Refresh session user picture for same request chain
+    // Photo flow: popup bas law DB + file OK
+    if ($tryingPhoto) {
+        $want = basename(str_replace('\\', '/', (string) $imageName));
+        $dbRows = staff_fetch("SELECT `picture` FROM `app_login` WHERE `id` = '{$uid}' LIMIT 1");
+        $dbPic = isset($dbRows[0]['picture'])
+            ? basename(str_replace('\\', '/', (string) $dbRows[0]['picture']))
+            : '';
+        $ok = ($want !== ''
+            && strcasecmp($want, $oldBase) !== 0
+            && $dbPic === $want
+            && staff_picture_on_disk($want));
+        if ($ok) {
+            $row_get_user['picture'] = $want;
+            header('Location: profile.php?photo=1');
+        } else {
+            header('Location: profile.php?photo_err=1');
+        }
+        exit;
+    }
     if ($imageName !== '' && strcasecmp($imageName, 'null') !== 0) {
         $row_get_user['picture'] = $imageName;
     }
@@ -632,6 +672,7 @@ function staff_render_profile()
         return;
     }
     $done = isset($_GET['done']);
+    $photoErr = isset($_GET['photo_err']);
     $canPic = (int) ($row_get_user['id'] ?? 0) !== 1;
     $email = (string) ($row_get_user['email'] ?? '');
     $name = (string) ($row_get_user['name'] ?? $displayName);
@@ -660,6 +701,9 @@ function staff_render_profile()
     $showId = (int) ($emp['id'] ?? $empId);
 
     staff_banner($done);
+    if ($photoErr) {
+        echo '<p class="note note--navy">' . staff_h($L['photo_failed']) . '</p>';
+    }
     echo '<section class="prof">';
     echo '<div class="prof__id">';
     if ($canPic) {
@@ -700,25 +744,37 @@ function staff_render_profile()
     echo '<div class="settings">';
     staff_profile_option('profile.php?edit=name', $L['field_name'], staff_profile_dash($name));
     staff_profile_option('profile.php?edit=email', $L['field_email'], staff_profile_dash($email));
-    if ($canPic) {
-        echo '<button class="settings__item" type="button" data-photo-trigger>';
-        echo '<span class="prof-opt"><strong>' . staff_h($L['change_photo']) . '</strong></span>';
-        echo '<span class="settings__go">' . (function_exists('staff_go') ? staff_go() : '›') . '</span>';
-        echo '</button>';
-    }
     staff_profile_option('password.php?from=profile', $L['password'], '');
     echo '</div>';
     echo '<a class="btn btn--signout" href="emp-view.php?exit=1">' . staff_ico('logout') . '<span>' . staff_h($L['exit']) . '</span></a>';
     staff_render_ascendra_credit();
 
     if ($canPic) {
-        echo '<form action="profile.php" method="post" enctype="multipart/form-data" hidden data-photo-save>';
+        echo '<form action="profile.php" method="post" enctype="multipart/form-data" hidden data-photo-save data-staff-wait-skip>';
         echo '<input type="file" id="picture" name="picture" accept="image/jpeg,image/png,image/gif,.jpg,.jpeg,.png,.gif" hidden data-photo-input>';
         echo '<input type="hidden" name="old_img" value="' . staff_h($oldPic) . '">';
         echo '<input type="hidden" name="name" value="' . staff_h($name) . '">';
         echo '<input type="hidden" name="email" value="' . staff_h($email) . '">';
         echo '<button type="submit" name="submit" value="1"></button>';
         echo '</form>';
+        // Crop sheet — ba3d ma ye5tar el soora, 2abl el save
+        echo '<div class="photo-crop" id="photo-crop" hidden aria-hidden="true" data-photo-crop>';
+        echo '<div class="photo-crop__veil" data-crop-close tabindex="-1"></div>';
+        echo '<div class="photo-crop__panel" role="dialog" aria-modal="true" aria-labelledby="photo-crop-title">';
+        echo '<h2 class="photo-crop__title" id="photo-crop-title">' . staff_h($L['photo_crop_title']) . '</h2>';
+        echo '<p class="photo-crop__hint">' . staff_h($L['photo_crop_hint']) . '</p>';
+        echo '<div class="photo-crop__stage" data-crop-stage>';
+        echo '<img class="photo-crop__img" alt="" draggable="false" data-crop-img>';
+        echo '<div class="photo-crop__mask" aria-hidden="true"></div>';
+        echo '</div>';
+        echo '<div class="photo-crop__zoom">';
+        echo '<button class="btn btn--ghost" type="button" data-crop-zoom-out aria-label="-">−</button>';
+        echo '<button class="btn btn--ghost" type="button" data-crop-zoom-in aria-label="+">+</button>';
+        echo '</div>';
+        echo '<div class="photo-crop__actions">';
+        echo '<button class="btn btn--ghost" type="button" data-crop-close>' . staff_h($L['photo_crop_cancel']) . '</button>';
+        echo '<button class="btn btn--primary" type="button" data-crop-save>' . staff_h($L['photo_crop_save']) . '</button>';
+        echo '</div></div></div>';
     }
     echo '</section>';
 }

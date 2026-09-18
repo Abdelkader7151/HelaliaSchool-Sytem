@@ -427,6 +427,6 @@ $totalRows_get_question = mysqli_num_rows($get_question);
 
    });
 </script>
-<script src="../assets/js/app.js" defer></script>
+<script src="../assets/js/app.js?v=65" defer></script>
 </body>
 </html> 

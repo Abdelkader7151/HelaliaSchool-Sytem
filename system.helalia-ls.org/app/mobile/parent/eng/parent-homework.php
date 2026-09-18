@@ -165,6 +165,6 @@
   </nav>
 
 </div>
-<script src="../assets/js/app.js" defer></script>
+<script src="../assets/js/app.js?v=65" defer></script>
 </body>
 </html> 

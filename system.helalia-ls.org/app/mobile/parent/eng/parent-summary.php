@@ -306,7 +306,7 @@ mysqli_query($database, $insertSQL) or die(mysqli_error($database));
   </nav>
 
 </div>
-<script src="../assets/js/app.js" defer></script>
+<script src="../assets/js/app.js?v=65" defer></script>
 
 <script>
 (function () {

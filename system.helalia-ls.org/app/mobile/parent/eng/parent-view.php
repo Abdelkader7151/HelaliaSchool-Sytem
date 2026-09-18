@@ -143,6 +143,6 @@ document.querySelectorAll('.bell__badge').forEach(function (b) {
   if (parseInt(b.textContent, 10) > 0 === false) b.remove();
 });
 </script>
-<script src="../assets/js/app.js" defer></script>
+<script src="../assets/js/app.js?v=65" defer></script>
 </body>
 </html>

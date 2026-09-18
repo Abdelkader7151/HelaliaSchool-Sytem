@@ -325,7 +325,7 @@ $totalRows_get_kids_list2 = mysqli_num_rows($get_kids_list2);
 
 </div>
  
-<script src="../assets/js/app.js" defer></script>
+<script src="../assets/js/app.js?v=65" defer></script>
 <script src="https://code.jquery.com/jquery-4.0.0.min.js" integrity="sha256-OaVG6prZf4v69dPg6PhVattBXkcOWQB62pdZ3ORyrao=" crossorigin="anonymous"></script>
 
 <script>

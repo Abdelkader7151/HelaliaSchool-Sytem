@@ -91,20 +91,18 @@
   }
 })();
 
-/* Dual staff: reopen must show Emp/Parent chooser, not last parent screen. */
+/*
+ * Dual Emp/Parent reopen is handled on splash (index.php → choose-role).
+ * Do NOT bounce parent pages to choose-role from JS: for same-phone dual
+ * accounts (e.g. 01111006024 Omnia) that caused parent-view ↔ choose-role
+ * loops with a flashing "Loading... Please wait" overlay.
+ */
 (function () {
-  if ((document.cookie || '').indexOf('helalia_dual_staff=1') === -1) return;
-  var path = location.pathname || '';
-  // Don't interrupt reading alerts / alert detail / news.
-  if (/parent-alerts?\.php/.test(path)) return;
-  if (/parent-timeline\.php/.test(path)) return;
-  if ((location.search || '').indexOf('dual_picked=1') !== -1) {
-    try { sessionStorage.setItem('helalia_dual_pick', '1'); } catch (e) {}
-    return;
-  }
-  var picked = false;
-  try { picked = sessionStorage.getItem('helalia_dual_pick') === '1'; } catch (e) { return; }
-  if (picked) return;
-  var lang = path.indexOf('/arb/') !== -1 ? 'arb' : 'eng';
-  location.replace('../../emp/' + lang + '/choose-role.php?fresh=1');
+  if ((location.search || '').indexOf('dual_picked=1') === -1) return;
+  try { sessionStorage.setItem('helalia_dual_pick', '1'); } catch (e) {}
+  try {
+    if (window.history && history.replaceState) {
+      history.replaceState(null, '', location.pathname + (location.hash || ''));
+    }
+  } catch (e2) {}
 })();

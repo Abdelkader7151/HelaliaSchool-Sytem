@@ -209,6 +209,6 @@
 
 </div>
 
-<script src="../assets/js/app.js?v=41" defer></script>
+<script src="../assets/js/app.js?v=65" defer></script>
 </body>
 </html>

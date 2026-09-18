@@ -71,7 +71,7 @@ if (!$splashClearClientAuth && isset($_COOKIE['helu'], $_COOKIE['help']) && hela
     $password = escape($_COOKIE['help']);
 
     $LoginRS__query = sprintf(
-        "SELECT `phone`, `password`, `id`, `account_type`, `languages`, `phone_id` FROM `app_login` WHERE `phone`=%s AND `password`=%s",
+        "SELECT `phone`, `password`, `id`, `account_type`, `languages`, `phone_id` FROM `app_login` WHERE `phone`=%s AND `password`=%s ORDER BY CASE WHEN `account_type` = 2 THEN 0 ELSE 1 END, `id` ASC LIMIT 1",
         GetSQLValueString($database, $loginUsername, "text"),
         GetSQLValueString($database, $password, "text")
     );

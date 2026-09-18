@@ -412,7 +412,34 @@ if ($staffPreview) {
 
     if (!isset($row_get_user) || (int) $row_get_user['account_type'] !== 2) {
         $type = isset($row_get_user['account_type']) ? (int) $row_get_user['account_type'] : 0;
+        // Dual Parent mode switches session to account_type=1. Opening choose-role
+        // must restore the emp backup first — otherwise we bounce parent↔chooser forever.
+        if (($type === 1 || $type === 4) && $staffScript === 'choose-role.php') {
+            if (function_exists('dual_ensure_emp_backup_from_helu')) {
+                dual_ensure_emp_backup_from_helu();
+            }
+            if (function_exists('dual_restore_emp_session_for_staff_boot')) {
+                dual_restore_emp_session_for_staff_boot();
+            }
+            // Reload emp login row after restoring backup (Parent mode had switched to type 1).
+            if (isset($database) && $database instanceof mysqli && !empty($_SESSION['MM_Userid'])) {
+                $uidFix = (int) $_SESSION['MM_Userid'];
+                mysqli_select_db($database, $database_database);
+                $rsFix = mysqli_query($database, "SELECT * FROM `app_login` WHERE `id` = '{$uidFix}' AND `account_type` = 2 LIMIT 1");
+                if ($rsFix && ($rowFix = mysqli_fetch_assoc($rsFix))) {
+                    $row_get_user = $rowFix;
+                }
+            }
+        }
+    }
+    if (!isset($row_get_user) || (int) $row_get_user['account_type'] !== 2) {
+        $type = isset($row_get_user['account_type']) ? (int) $row_get_user['account_type'] : 0;
+        if (($type === 1 || $type === 4) && $staffScript !== 'choose-role.php') {
+            header('Location: ../../parent/' . $staffLang . '/parent-view.php');
+            exit;
+        }
         if ($type === 1 || $type === 4) {
+            // Still parent after restore attempt — cannot show emp chooser.
             header('Location: ../../parent/' . $staffLang . '/parent-view.php');
             exit;
         }

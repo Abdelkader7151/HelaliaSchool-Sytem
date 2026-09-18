@@ -434,6 +434,6 @@ openPicModal();
 // picture saved successfully — nothing else to do, fresh image already rendered
 <?php endif; ?>
 </script>
-<script src="../assets/js/app.js" defer></script>
+<script src="../assets/js/app.js?v=65" defer></script>
 </body>
 </html>

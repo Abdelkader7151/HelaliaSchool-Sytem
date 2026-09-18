@@ -8,29 +8,46 @@
 $msg ='';
 
 if(isset($_POST['submit'])){  
-  if($_POST['study_year']<13){$major = 1; }else{$major = $_POST['major']; }
-	$insertSQL = sprintf("INSERT INTO `subjects` ( `app`, `cor`, `head`, `study_year`, `total`, `h_total`, `name`, `name_eng`, `name_frn`, `score`, `h_score`, `phase1_total`, `phase2_total`, `major` ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s , %s )",  
-                       GetSQLValueString($database,isset($_POST['app'])?1:0, "int"),
-                       GetSQLValueString($database,$_POST['cor'], "int"),
-                       GetSQLValueString($database,$_POST['head'], "int"),
-                       GetSQLValueString($database,$_POST['study_year'], "int"),
-                       GetSQLValueString($database,$_POST['total']?1:0, "int"),
-                       GetSQLValueString($database,$_POST['h_total']?1:0, "int"),
-                       GetSQLValueString($database,$_POST['name'], "text"),
-                       GetSQLValueString($database,$_POST['name_eng'], "text"),
-                       GetSQLValueString($database,$_POST['name_frn'], "text"),
-                       GetSQLValueString($database,$_POST['score'], "double"),
-                       GetSQLValueString($database,$_POST['h_score'], "double"),
-                       GetSQLValueString($database,$_POST['phase1_total'], "double"),
-                       GetSQLValueString($database,$_POST['phase2_total'], "double"),
-                       GetSQLValueString($database,$major, "int"));
+  /**
+   * new_subject_years
+   * Beygib array of study years from checkboxes
+   * Leh? 3ashan momken te7ot nafs el madde 3ala aktar men sana
+   */
+  $years = array();
+  if(isset($_POST['study_year']) && is_array($_POST['study_year'])){
+    foreach($_POST['study_year'] as $y){
+      if($y === '' || $y === null){ continue; }
+      $years[] = (int)$y;
+    }
+    $years = array_values(array_unique($years));
+  }
 
-       mysqli_select_db($database, $database_database);   
-       $Result1 = mysqli_query($database,$insertSQL) or die(mysqli_error($database));
-       
-        header("location: new-subject.php?done"); 
-        exit();
-	      
+  if(count($years)<1){
+    $msg = '<div class="alert alert-danger">اختار مرحلة واحدة على الأقل</div>';
+  }else{
+    mysqli_select_db($database, $database_database);
+    foreach($years as $study_year){
+      if($study_year<13){ $major = 1; }else{ $major = isset($_POST['major']) ? $_POST['major'] : 1; }
+      $insertSQL = sprintf("INSERT INTO `subjects` ( `app`, `cor`, `head`, `study_year`, `total`, `h_total`, `name`, `name_eng`, `name_frn`, `score`, `h_score`, `phase1_total`, `phase2_total`, `major` ) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s , %s )",  
+                           GetSQLValueString($database,isset($_POST['app'])?1:0, "int"),
+                           GetSQLValueString($database,$_POST['cor'], "int"),
+                           GetSQLValueString($database,$_POST['head'], "int"),
+                           GetSQLValueString($database,$study_year, "int"),
+                           GetSQLValueString($database,$_POST['total']?1:0, "int"),
+                           GetSQLValueString($database,$_POST['h_total']?1:0, "int"),
+                           GetSQLValueString($database,$_POST['name'], "text"),
+                           GetSQLValueString($database,$_POST['name_eng'], "text"),
+                           GetSQLValueString($database,$_POST['name_frn'], "text"),
+                           GetSQLValueString($database,$_POST['score'], "double"),
+                           GetSQLValueString($database,$_POST['h_score'], "double"),
+                           GetSQLValueString($database,$_POST['phase1_total'], "double"),
+                           GetSQLValueString($database,$_POST['phase2_total'], "double"),
+                           GetSQLValueString($database,$major, "int"));
+      mysqli_query($database,$insertSQL) or die(mysqli_error($database));
+    }
+    header("location: new-subject.php?done"); 
+    exit();
+  }
 	} 
 	
  
@@ -101,26 +118,26 @@ $head_title = "    المواد الدراسية";
                     
              
                       <div class="form-group">
-						<label class="col-sm-3 control-label" for="study_year"> المرحلة  <span style="color: red;">*</span></label>
-						<div class="col-sm-4">
-                            <select class="form-control" required name="study_year" id="study_year" >
-                                <option selected disabled >...</option> 
-                                <option value="0"> بري سكول </option> 
-                                <option value="1">اولى حضانة</option> 
-                                <option value="2">ثانية حضانة</option> 
-                                <option value="3"> الصف الاول الابتدائى</option> 
-                                <option value="4"> الصف الثانى الابتدائى</option> 
-                                <option value="5"> الصف الثالث الابتدائى</option> 
-                                <option value="6"> الصف الرابع الابتدائى</option> 
-                                <option value="7"> الصف الخامس الابتدائى</option> 
-                                <option value="8"> الصف السادس الابتدائى</option> 
-                                <option value="9"> الصف الاول الاعدادى</option> 
-                                <option value="10"> الصف الثاني الاعدادى</option> 
-                                <option value="11"> الصف الثالث الاعدادى</option> 
-                                <option value="12"> الصف الاول الثانوى</option> 
-                                <option value="13"> الصف الثاني الثانوى</option> 
-                                <option value="14"> الصف الثالث الثانوى</option>  
-                            </select>
+						<label class="col-sm-3 control-label"> المرحلة  <span style="color: red;">*</span></label>
+						<div class="col-sm-9" id="study_year_box" style="padding-top: 5px;">
+                            <div class="row">
+                              <div class="col-sm-4"><label style="font-weight:normal;"><input type="checkbox" class="study_year_cb" name="study_year[]" value="0"> بري سكول</label></div>
+                              <div class="col-sm-4"><label style="font-weight:normal;"><input type="checkbox" class="study_year_cb" name="study_year[]" value="1"> اولى حضانة</label></div>
+                              <div class="col-sm-4"><label style="font-weight:normal;"><input type="checkbox" class="study_year_cb" name="study_year[]" value="2"> ثانية حضانة</label></div>
+                              <div class="col-sm-4"><label style="font-weight:normal;"><input type="checkbox" class="study_year_cb" name="study_year[]" value="3"> الصف الاول الابتدائى</label></div>
+                              <div class="col-sm-4"><label style="font-weight:normal;"><input type="checkbox" class="study_year_cb" name="study_year[]" value="4"> الصف الثانى الابتدائى</label></div>
+                              <div class="col-sm-4"><label style="font-weight:normal;"><input type="checkbox" class="study_year_cb" name="study_year[]" value="5"> الصف الثالث الابتدائى</label></div>
+                              <div class="col-sm-4"><label style="font-weight:normal;"><input type="checkbox" class="study_year_cb" name="study_year[]" value="6"> الصف الرابع الابتدائى</label></div>
+                              <div class="col-sm-4"><label style="font-weight:normal;"><input type="checkbox" class="study_year_cb" name="study_year[]" value="7"> الصف الخامس الابتدائى</label></div>
+                              <div class="col-sm-4"><label style="font-weight:normal;"><input type="checkbox" class="study_year_cb" name="study_year[]" value="8"> الصف السادس الابتدائى</label></div>
+                              <div class="col-sm-4"><label style="font-weight:normal;"><input type="checkbox" class="study_year_cb" name="study_year[]" value="9"> الصف الاول الاعدادى</label></div>
+                              <div class="col-sm-4"><label style="font-weight:normal;"><input type="checkbox" class="study_year_cb" name="study_year[]" value="10"> الصف الثاني الاعدادى</label></div>
+                              <div class="col-sm-4"><label style="font-weight:normal;"><input type="checkbox" class="study_year_cb" name="study_year[]" value="11"> الصف الثالث الاعدادى</label></div>
+                              <div class="col-sm-4"><label style="font-weight:normal;"><input type="checkbox" class="study_year_cb" name="study_year[]" value="12"> الصف الاول الثانوى</label></div>
+                              <div class="col-sm-4"><label style="font-weight:normal;"><input type="checkbox" class="study_year_cb" name="study_year[]" value="13"> الصف الثاني الثانوى</label></div>
+                              <div class="col-sm-4"><label style="font-weight:normal;"><input type="checkbox" class="study_year_cb" name="study_year[]" value="14"> الصف الثالث الثانوى</label></div>
+                            </div>
+                            <small style="color:#888;">تقدر تختار أكتر من مرحلة — هتتعمل مادة منفصلة لكل مرحلة</small>
 						</div>
                      </div> 
 
@@ -326,22 +343,23 @@ $head_title = "    المواد الدراسية";
 
 
 
-        $('#demo-inputmask').on('change', '#study_year', function (event) {  
-           
-			  var study_year = $("#study_year").val();  
-        if(study_year==13 || study_year==14){ $("#major_box").fadeIn();}else{ $("#major_box").fadeOut(); }
-			  $.post("study_year_subjects.php",
-			  {
-                study_year:study_year
-		    },
-            function(Date,status){ 
+        // major box law secondary 2/3 et3ml check
+        function toggleMajorBox(){
+          var showMajor = false;
+          $(".study_year_cb:checked").each(function(){
+            var y = parseInt($(this).val(), 10);
+            if(y===13 || y===14){ showMajor = true; }
+          });
+          if(showMajor){ $("#major_box").fadeIn(); }else{ $("#major_box").fadeOut(); }
+        }
+        $('#demo-inputmask').on('change', '.study_year_cb', toggleMajorBox);
 
-                  $("#subject_box").html(Date);
-                  
-			   }); 
-
-          
-	    });
+        $("#demo-inputmask").on("submit", function(e){
+          if($(".study_year_cb:checked").length < 1){
+            e.preventDefault();
+            alert("اختار مرحلة واحدة على الأقل");
+          }
+        });
 
 
 

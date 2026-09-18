@@ -74,7 +74,10 @@ function dual_manual_parent_accounts()
     return array(
         '01001890072' => array('parent_id' => 3, 'parent_phone' => '01000729089', 'alt_parent_login' => '01000729089'), // Abeer Mahmoud Mohamed
         '01286423337' => array('parent_id' => 1872, 'parent_phone' => '01286423337'), // basmala hasan ramadan
-        '01006470320' => array('parent_id' => 1857, 'parent_phone' => '01002206353'), // Engy Hasan
+        // Engy + Moustafa (Omar #1978). Shared parent_id 1857 on 01008288191 — mesh emp spouse phone
+        // (old parent_phone=01002206353 khalla Moustafa yefata7 Engy account).
+        '01006470320' => array('parent_id' => 1857, 'parent_phone' => '01008288191'), // Engy Hasan
+        '01002206353' => array('parent_id' => 1857, 'parent_phone' => '01008288191'), // MOUSTAFA HESEEN MOHAMED
         '01000142977' => array('parent_id' => 1409, 'parent_phone' => '01000077243'), // Esraa Ahmed Megahed
         '01000591167' => array('parent_id' => 1261, 'parent_phone' => '01029479785'), // Gamal Ahmed
         '01222316896' => array('parent_id' => 1039, 'parent_phone' => '01020383447'), // Heba Aftouh
@@ -111,12 +114,17 @@ function dual_manual_parent_info_for_phone($rawPhone)
     if ($n === '') {
         return null;
     }
-    foreach (dual_manual_parent_accounts() as $phone => $info) {
+    $accounts = dual_manual_parent_accounts();
+    // 1) Staff phone awwal — law spouse parent_phone = emp phone, mayfata7sh account el tany
+    foreach ($accounts as $phone => $info) {
         if (dual_digits($phone) === $n) {
             $out = $info;
             $out['staff_phone'] = $phone;
             return $out;
         }
+    }
+    // 2) Parent / alt phones
+    foreach ($accounts as $phone => $info) {
         if (!empty($info['parent_phone']) && dual_digits($info['parent_phone']) === $n) {
             $out = $info;
             $out['staff_phone'] = $phone;

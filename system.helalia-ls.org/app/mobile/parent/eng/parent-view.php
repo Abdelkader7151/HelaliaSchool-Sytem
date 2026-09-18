@@ -4,7 +4,11 @@
       include("../../includes/functions_eng.php");
       
       
-mysqli_select_db($database, $database_database,);
+mysqli_select_db($database, $database_database);
+if (empty($row_get_user) || empty($row_get_user['id'])) {
+    header('Location: ../../index.php');
+    exit;
+}
 $query_get_kids_list = "SELECT * FROM `kids_list` where `parent_id` = '{$row_get_user['id']}'";
 $get_kids_list = mysqli_query($database, $query_get_kids_list) or die(mysqli_error($database));
 $row_get_kids_list = mysqli_fetch_assoc($get_kids_list);

@@ -145,6 +145,17 @@ if (!function_exists('helalia_require_fresh_auth')) {
         if (helalia_auth_epoch_ok()) {
             return;
         }
+        // Dual Parent mode keeps emp helu/help; some WebViews drop helv on role switch.
+        // Re-stamp epoch cookie instead of wiping the session (white/blank parent screen).
+        if (!empty($_SESSION['helalia_emp_backup']) && is_array($_SESSION['helalia_emp_backup'])
+            && isset($_SESSION['account_type']) && (int) $_SESSION['account_type'] === 1
+            && !empty($_COOKIE['helu']) && !empty($_COOKIE['help'])
+            && function_exists('helalia_set_auth_cookies')) {
+            helalia_set_auth_cookies($_COOKIE['helu'], $_COOKIE['help']);
+            if (helalia_auth_epoch_ok()) {
+                return;
+            }
+        }
         helalia_logout_and_redirect($dest);
     }
 }

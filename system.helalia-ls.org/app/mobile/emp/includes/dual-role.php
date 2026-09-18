@@ -919,7 +919,21 @@ function dual_live_parent_href()
 
 function dual_open_live_parent()
 {
-    dual_set_role('parent');
+    if (!isset($_SESSION['helalia_role']) || (string) $_SESSION['helalia_role'] !== 'parent'
+        || !isset($_SESSION['account_type']) || (int) $_SESSION['account_type'] !== 1) {
+        dual_set_role('parent');
+    }
+    // Keep auth epoch cookie alive across Emp→Parent switch (prevents blank parent UI).
+    if (function_exists('helalia_set_auth_cookies') && !empty($_COOKIE['helu']) && !empty($_COOKIE['help'])) {
+        helalia_set_auth_cookies($_COOKIE['helu'], $_COOKIE['help']);
+    } elseif (function_exists('helalia_set_auth_cookies')
+        && !empty($_SESSION['helalia_emp_backup']['helu'])
+        && !empty($_SESSION['helalia_emp_backup']['help'])) {
+        helalia_set_auth_cookies(
+            $_SESSION['helalia_emp_backup']['helu'],
+            $_SESSION['helalia_emp_backup']['help']
+        );
+    }
     header('Location: ' . dual_live_parent_href() . '?dual_picked=1');
     exit;
 }

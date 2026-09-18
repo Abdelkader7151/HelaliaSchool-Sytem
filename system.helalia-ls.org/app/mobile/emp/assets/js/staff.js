@@ -148,231 +148,28 @@
 (function () {
   var triggers = document.querySelectorAll('[data-photo-trigger]');
   var input = document.querySelector('[data-photo-input]');
-  var preview = document.querySelector('[data-photo-img]');
-  var crop = document.querySelector('[data-photo-crop]');
-  var form = document.querySelector('form[data-photo-save]');
-  if (!triggers.length || !input || !crop || !form) return;
-
-  var cropImg = crop.querySelector('[data-crop-img]');
-  var stage = crop.querySelector('[data-crop-stage]');
-  var btnSave = crop.querySelector('[data-crop-save]');
-  var btnZoomIn = crop.querySelector('[data-crop-zoom-in]');
-  var btnZoomOut = crop.querySelector('[data-crop-zoom-out]');
-  var state = {
-    scale: 1,
-    minScale: 1,
-    x: 0,
-    y: 0,
-    natW: 0,
-    natH: 0,
-    dragging: false,
-    lx: 0,
-    ly: 0,
-    objectUrl: ''
-  };
-
-  function cropSide() {
-    if (!stage) return 240;
-    return Math.min(stage.clientWidth, stage.clientHeight) * 0.88;
-  }
-
-  function layout() {
-    if (!cropImg || !stage || !state.natW) return;
-    cropImg.style.width = (state.natW * state.scale) + 'px';
-    cropImg.style.height = (state.natH * state.scale) + 'px';
-    cropImg.style.left = state.x + 'px';
-    cropImg.style.top = state.y + 'px';
-  }
-
-  function fitCover() {
-    if (!stage || !state.natW) return;
-    var side = cropSide();
-    var cx = stage.clientWidth / 2;
-    var cy = stage.clientHeight / 2;
-    state.minScale = Math.max(side / state.natW, side / state.natH);
-    state.scale = state.minScale;
-    state.x = cx - (state.natW * state.scale) / 2;
-    state.y = cy - (state.natH * state.scale) / 2;
-    layout();
-  }
-
-  function openCrop() {
-    crop.hidden = false;
-    crop.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeCrop() {
-    crop.hidden = true;
-    crop.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
-    input.value = '';
-    if (state.objectUrl) {
-      try { URL.revokeObjectURL(state.objectUrl); } catch (e) {}
-      state.objectUrl = '';
-    }
-  }
-
-  triggers.forEach(function (trigger) {
-    trigger.addEventListener('click', function () {
-      input.click();
-    });
-  });
-
-  crop.querySelectorAll('[data-crop-close]').forEach(function (el) {
-    el.addEventListener('click', closeCrop);
-  });
-
-  input.addEventListener('change', function () {
-    var file = input.files && input.files[0];
-    if (!file || !cropImg) return;
-    if (state.objectUrl) {
-      try { URL.revokeObjectURL(state.objectUrl); } catch (e) {}
-    }
-    state.objectUrl = URL.createObjectURL(file);
-    cropImg.onload = function () {
-      state.natW = cropImg.naturalWidth || 1;
-      state.natH = cropImg.naturalHeight || 1;
-      openCrop();
-      fitCover();
-    };
-    cropImg.src = state.objectUrl;
-  });
-
-  if (btnZoomIn) {
-    btnZoomIn.addEventListener('click', function () {
-      var side = cropSide();
-      var cx = stage.clientWidth / 2;
-      var cy = stage.clientHeight / 2;
-      var next = Math.min(state.scale * 1.15, state.minScale * 4);
-      var ox = (cx - state.x) / state.scale;
-      var oy = (cy - state.y) / state.scale;
-      state.scale = next;
-      state.x = cx - ox * state.scale;
-      state.y = cy - oy * state.scale;
-      layout();
-    });
-  }
-  if (btnZoomOut) {
-    btnZoomOut.addEventListener('click', function () {
-      var cx = stage.clientWidth / 2;
-      var cy = stage.clientHeight / 2;
-      var next = Math.max(state.scale / 1.15, state.minScale);
-      var ox = (cx - state.x) / state.scale;
-      var oy = (cy - state.y) / state.scale;
-      state.scale = next;
-      state.x = cx - ox * state.scale;
-      state.y = cy - oy * state.scale;
-      layout();
-    });
-  }
-
-  function pointerDown(clientX, clientY) {
-    state.dragging = true;
-    state.lx = clientX;
-    state.ly = clientY;
-  }
-  function pointerMove(clientX, clientY) {
-    if (!state.dragging) return;
-    state.x += clientX - state.lx;
-    state.y += clientY - state.ly;
-    state.lx = clientX;
-    state.ly = clientY;
-    layout();
-  }
-  function pointerUp() {
-    state.dragging = false;
-  }
-
-  if (stage) {
-    stage.addEventListener('mousedown', function (e) {
-      e.preventDefault();
-      pointerDown(e.clientX, e.clientY);
-    });
-    window.addEventListener('mousemove', function (e) {
-      if (state.dragging) pointerMove(e.clientX, e.clientY);
-    });
-    window.addEventListener('mouseup', pointerUp);
-    stage.addEventListener('touchstart', function (e) {
-      if (!e.touches || !e.touches[0]) return;
-      pointerDown(e.touches[0].clientX, e.touches[0].clientY);
-    }, { passive: true });
-    stage.addEventListener('touchmove', function (e) {
-      if (!state.dragging || !e.touches || !e.touches[0]) return;
-      e.preventDefault();
-      pointerMove(e.touches[0].clientX, e.touches[0].clientY);
-    }, { passive: false });
-    stage.addEventListener('touchend', pointerUp);
-    stage.addEventListener('touchcancel', pointerUp);
-  }
-
-  function exportBlob(done) {
-    if (!stage || !cropImg || !state.natW) {
-      done(null);
-      return;
-    }
-    var side = cropSide();
-    var cx = stage.clientWidth / 2;
-    var cy = stage.clientHeight / 2;
-    var left = cx - side / 2;
-    var top = cy - side / 2;
-    var sx = (left - state.x) / state.scale;
-    var sy = (top - state.y) / state.scale;
-    var sw = side / state.scale;
-    var sh = side / state.scale;
-    var out = 512;
-    var canvas = document.createElement('canvas');
-    canvas.width = out;
-    canvas.height = out;
-    var ctx = canvas.getContext('2d');
-    if (!ctx) {
-      done(null);
-      return;
-    }
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, out, out);
-    try {
-      ctx.drawImage(cropImg, sx, sy, sw, sh, 0, 0, out, out);
-    } catch (err) {
-      done(null);
-      return;
-    }
-    if (canvas.toBlob) {
-      canvas.toBlob(function (blob) { done(blob); }, 'image/jpeg', 0.85);
-    } else {
-      done(null);
-    }
-  }
-
-  if (btnSave) {
-    btnSave.addEventListener('click', function () {
-      btnSave.disabled = true;
-      exportBlob(function (blob) {
-        if (!blob) {
-          btnSave.disabled = false;
-          return;
-        }
-        var file = new File([blob], 'profile.jpg', { type: 'image/jpeg' });
-        try {
-          var dt = new DataTransfer();
-          dt.items.add(file);
-          input.files = dt.files;
-        } catch (e) {
-          btnSave.disabled = false;
-          return;
-        }
-        if (preview) {
-          preview.src = URL.createObjectURL(blob);
-        }
-        if (window.staffShowWorking) window.staffShowWorking(true);
-        form.submit();
+  var img = document.querySelector('[data-photo-img]');
+  if (triggers.length && input) {
+    triggers.forEach(function (trigger) {
+      trigger.addEventListener('click', function () {
+        input.click();
       });
     });
+    input.addEventListener('change', function () {
+      var file = input.files && input.files[0];
+      if (file && img && window.FileReader) {
+        var reader = new FileReader();
+        reader.onload = function (e) {
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+      var form = input.closest('form[data-photo-save]');
+      if (file && form) {
+        form.submit();
+      }
+    });
   }
-
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && crop && !crop.hidden) closeCrop();
-  });
 })();
 
 (function () {

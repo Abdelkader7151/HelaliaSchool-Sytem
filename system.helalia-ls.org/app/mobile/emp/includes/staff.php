@@ -195,8 +195,8 @@ if ($staffPreview) {
     $photoUrl = staff_photo_url($row_get_user);
     $old = 'https://system.helalia-ls.org/app/old/' . $staffLang . '/';
     $css = '../assets/css/helalia.css';
-    $extraCss = '../assets/css/staff.css?v=72';
-    $js = '../assets/js/staff.js?v=18';
+    $extraCss = '../assets/css/staff.css?v=73';
+    $js = '../assets/js/staff.js?v=19';
     $icon = '../assets/img/logo-icon.png';
     $logo = '../assets/img/logo.png';
     $showStudent = $showHomework = $showRevision = $showMemo = true;
@@ -478,8 +478,8 @@ if ($staffPreview) {
 
     $old = 'https://system.helalia-ls.org/app/old/' . $staffLang . '/';
     $css = '../assets/css/helalia.css';
-    $extraCss = '../assets/css/staff.css?v=72';
-    $js = '../assets/js/staff.js?v=18';
+    $extraCss = '../assets/css/staff.css?v=73';
+    $js = '../assets/js/staff.js?v=19';
     $icon = '../assets/img/logo-icon.png';
     $logo = '../assets/img/logo.png';
     $parentCss = $mobileRoot . '/parent/assets/css/helalia.css';
@@ -685,10 +685,6 @@ if ($staffLang === 'arb') {
         'st_canceled' => 'ملغي',
         'empty_list' => 'لا يوجد شيء للعرض',
         'change_photo' => 'تغيير الصورة',
-        'photo_crop_title' => 'ضبط الصورة',
-        'photo_crop_hint' => 'اسحب للتحريك واستخدم + / − للتكبير',
-        'photo_crop_save' => 'حفظ الصورة',
-        'photo_crop_cancel' => 'إلغاء',
         'photo_saved' => 'تم حفظ صورة الملف الشخصي بنجاح',
         'photo_failed' => 'تعذر حفظ الصورة. حاول مرة أخرى.',
         'password_label' => 'كلمة المرور',
@@ -934,10 +930,6 @@ if ($staffLang === 'arb') {
         'st_canceled' => 'Canceled',
         'empty_list' => 'Nothing to show yet',
         'change_photo' => 'Change picture',
-        'photo_crop_title' => 'Adjust photo',
-        'photo_crop_hint' => 'Drag to move · use + / − to zoom',
-        'photo_crop_save' => 'Save photo',
-        'photo_crop_cancel' => 'Cancel',
         'photo_saved' => 'Your profile photo has been saved',
         'photo_failed' => 'Could not save the photo. Please try again.',
         'password_label' => 'Password',

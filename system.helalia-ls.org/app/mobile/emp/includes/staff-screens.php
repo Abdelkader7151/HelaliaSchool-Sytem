@@ -750,31 +750,13 @@ function staff_render_profile()
     staff_render_ascendra_credit();
 
     if ($canPic) {
-        echo '<form action="profile.php" method="post" enctype="multipart/form-data" hidden data-photo-save data-staff-wait-skip>';
+        echo '<form action="profile.php" method="post" enctype="multipart/form-data" hidden data-photo-save>';
         echo '<input type="file" id="picture" name="picture" accept="image/jpeg,image/png,image/gif,.jpg,.jpeg,.png,.gif" hidden data-photo-input>';
         echo '<input type="hidden" name="old_img" value="' . staff_h($oldPic) . '">';
         echo '<input type="hidden" name="name" value="' . staff_h($name) . '">';
         echo '<input type="hidden" name="email" value="' . staff_h($email) . '">';
         echo '<button type="submit" name="submit" value="1"></button>';
         echo '</form>';
-        // Crop sheet — ba3d ma ye5tar el soora, 2abl el save
-        echo '<div class="photo-crop" id="photo-crop" hidden aria-hidden="true" data-photo-crop>';
-        echo '<div class="photo-crop__veil" data-crop-close tabindex="-1"></div>';
-        echo '<div class="photo-crop__panel" role="dialog" aria-modal="true" aria-labelledby="photo-crop-title">';
-        echo '<h2 class="photo-crop__title" id="photo-crop-title">' . staff_h($L['photo_crop_title']) . '</h2>';
-        echo '<p class="photo-crop__hint">' . staff_h($L['photo_crop_hint']) . '</p>';
-        echo '<div class="photo-crop__stage" data-crop-stage>';
-        echo '<img class="photo-crop__img" alt="" draggable="false" data-crop-img>';
-        echo '<div class="photo-crop__mask" aria-hidden="true"></div>';
-        echo '</div>';
-        echo '<div class="photo-crop__zoom">';
-        echo '<button class="btn btn--ghost" type="button" data-crop-zoom-out aria-label="-">−</button>';
-        echo '<button class="btn btn--ghost" type="button" data-crop-zoom-in aria-label="+">+</button>';
-        echo '</div>';
-        echo '<div class="photo-crop__actions">';
-        echo '<button class="btn btn--ghost" type="button" data-crop-close>' . staff_h($L['photo_crop_cancel']) . '</button>';
-        echo '<button class="btn btn--primary" type="button" data-crop-save>' . staff_h($L['photo_crop_save']) . '</button>';
-        echo '</div></div></div>';
     }
     echo '</section>';
 }

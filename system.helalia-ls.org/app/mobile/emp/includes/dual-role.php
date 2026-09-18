@@ -390,12 +390,12 @@ function dual_ensure_emp_backup_from_helu()
 }
 
 /**
- * Parent Settings: show Switch role whenever this login is on the dual-role list
- * (staff phone or mapped parent phone), even if PHP session dropped emp backup.
+ * Parent Settings: show Switch role only when a real staff app_login exists
+ * for this dual phone (prevents parent↔chooser loops when emp was never activated).
  */
 function dual_parent_can_switch_role()
 {
-    global $row_get_user;
+    global $row_get_user, $database, $database_database;
 
     dual_ensure_emp_backup_from_helu();
     if (!empty($_SESSION['helalia_emp_backup']) && is_array($_SESSION['helalia_emp_backup'])
@@ -416,14 +416,40 @@ function dual_parent_can_switch_role()
     if (!empty($_SESSION['helalia_emp_backup']['MM_Username'])) {
         $candidates[] = (string) $_SESSION['helalia_emp_backup']['MM_Username'];
     }
+
+    $staffPhone = '';
     foreach ($candidates as $raw) {
         if (dual_manual_parent_info_for_phone($raw)) {
+            $staffPhone = dual_manual_staff_phone_for_any($raw);
+            if ($staffPhone === '') {
+                $staffPhone = (string) $raw;
+            }
+            break;
+        }
+    }
+
+    if ($staffPhone !== '' && isset($database) && $database instanceof mysqli) {
+        if (!empty($database_database)) {
+            mysqli_select_db($database, $database_database);
+        } elseif (!empty($GLOBALS['database_database'])) {
+            mysqli_select_db($database, $GLOBALS['database_database']);
+        }
+        $phoneEsc = dual_esc($staffPhone);
+        $q = mysqli_query(
+            $database,
+            "SELECT `id` FROM `app_login`
+             WHERE `phone` = '{$phoneEsc}' AND `account_type` = 2 AND `emp_id` > 0
+             LIMIT 1"
+        );
+        if ($q && mysqli_num_rows($q) > 0) {
             if (!headers_sent()) {
                 setcookie('helalia_dual_staff', '1', time() + (86400 * 365), '/');
             }
             $_COOKIE['helalia_dual_staff'] = '1';
             return true;
         }
+        // Mapped dual phone but staff login missing — do not offer Switch / set dual cookie.
+        return false;
     }
 
     // Staff account opened parent pages without a dual map entry — still allow escape to Emp.

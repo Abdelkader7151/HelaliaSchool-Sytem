@@ -197,8 +197,8 @@ if ($staffPreview) {
     $photoUrl = staff_photo_url($row_get_user);
     $old = 'https://system.helalia-ls.org/app/old/' . $staffLang . '/';
     $css = '../assets/css/helalia.css';
-    $extraCss = '../assets/css/staff.css?v=75';
-    $js = '../assets/js/staff.js?v=21';
+    $extraCss = '../assets/css/staff.css?v=76';
+    $js = '../assets/js/staff.js?v=22';
     $icon = '../assets/img/logo-icon.png';
     $logo = '../assets/img/logo.png';
     $showStudent = $showHomework = $showRevision = $showMemo = true;
@@ -480,8 +480,8 @@ if ($staffPreview) {
 
     $old = 'https://system.helalia-ls.org/app/old/' . $staffLang . '/';
     $css = '../assets/css/helalia.css';
-    $extraCss = '../assets/css/staff.css?v=75';
-    $js = '../assets/js/staff.js?v=21';
+    $extraCss = '../assets/css/staff.css?v=76';
+    $js = '../assets/js/staff.js?v=22';
     $icon = '../assets/img/logo-icon.png';
     $logo = '../assets/img/logo.png';
     $parentCss = $mobileRoot . '/parent/assets/css/helalia.css';

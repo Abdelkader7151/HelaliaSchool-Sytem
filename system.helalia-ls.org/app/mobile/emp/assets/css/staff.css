@@ -1437,18 +1437,28 @@ fieldset.field { border: 0; }
   font-weight: 800;
 }
 
-/* Profile photo confirm (preview + Save) */
+/* Profile photo confirm — above emp footer on Android + iOS */
 .photo-confirm {
   position: fixed;
   inset: 0;
-  z-index: 80;
+  z-index: 9999;
   display: grid;
-  place-items: end center;
+  align-items: end;
+  justify-items: center;
+  /* Lift whole sheet above footer + home indicator */
+  padding-block-end: calc(78px + env(safe-area-inset-bottom, 0px));
+  padding-inline: 0;
+  box-sizing: border-box;
+  pointer-events: auto;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 .photo-confirm[hidden] { display: none !important; }
 .photo-confirm__veil {
   position: absolute;
   inset: 0;
+  /* extend under footer so taps don't hit nav */
+  bottom: calc(-78px - env(safe-area-inset-bottom, 0px));
   background: rgb(17 44 90 / .55);
 }
 .photo-confirm__panel {
@@ -1456,12 +1466,19 @@ fieldset.field { border: 0; }
   z-index: 1;
   width: min(100%, 420px);
   margin: 0 auto;
-  padding: 18px 16px 22px;
+  padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
   border-radius: 22px 22px 0 0;
   background: #fff;
   box-shadow: 0 -12px 40px rgb(17 44 90 / .25);
   display: grid;
   gap: 12px;
+  /* Keep Save above thumb / footer overlap */
+  margin-block-end: 0;
+}
+body.photo-confirm-open .nav.nav--emp {
+  /* Footer stays visible but cannot steal taps while sheet is open */
+  pointer-events: none;
+  opacity: 0.35;
 }
 .photo-confirm__title {
   margin: 0;
@@ -1495,6 +1512,9 @@ fieldset.field { border: 0; }
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+}
+.photo-confirm__actions .btn {
+  min-height: 48px; /* iOS/Android tap target */
 }
 
 .prof-card { padding: 16px; }

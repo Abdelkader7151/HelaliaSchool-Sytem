@@ -160,14 +160,20 @@
 
   function openSheet() {
     if (!sheet) return;
+    // Portal to body — mesh teb2a ta7t footer (stacking / iOS WebView)
+    if (sheet.parentNode !== document.body) {
+      document.body.appendChild(sheet);
+    }
     sheet.hidden = false;
     sheet.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('photo-confirm-open');
     document.body.style.overflow = 'hidden';
   }
   function closeSheet() {
     if (!sheet) return;
     sheet.hidden = true;
     sheet.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('photo-confirm-open');
     document.body.style.overflow = '';
     pendingFile = null;
     input.value = '';

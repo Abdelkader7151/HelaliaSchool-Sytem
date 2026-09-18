@@ -249,9 +249,9 @@ function dual_parent_head($title)
     echo '<link rel="preconnect" href="https://fonts.googleapis.com">';
     echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>';
     if ($dir === 'rtl') {
-        echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap">';
+        echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=optional">';
     } else {
-        echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">';
+        echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=optional">';
     }
     echo '<link rel="stylesheet" href="' . staff_h($css) . '">';
     echo '</head><body><div class="app">';
@@ -438,7 +438,7 @@ function dual_render_parent_settings()
     echo '<a class="settings__item" href="profile.php"><span>' . staff_h($L['profile']) . '</span><span class="settings__go">' . $go . '</span></a>';
     echo '<a class="settings__item" href="password.php"><span>' . staff_h($L['password']) . '</span><span class="settings__go">' . $go . '</span></a>';
     if (function_exists('dual_has_dual') && dual_has_dual()) {
-        echo '<a class="settings__item" href="choose-role.php"><span>' . staff_h($L['role_switch']) . '</span><span class="settings__go">' . $go . '</span></a>';
+        echo '<a class="settings__item" href="choose-role.php?fresh=1"><span>' . staff_h($L['role_switch']) . '</span><span class="settings__go">' . $go . '</span></a>';
     }
     echo '<a class="settings__item" href="' . staff_h($other) . '"><span>' . staff_h($otherLabel) . '</span><span class="tiny">' . staff_h($otherTiny) . '</span><span class="settings__go">' . $go . '</span></a>';
     echo '</div>';

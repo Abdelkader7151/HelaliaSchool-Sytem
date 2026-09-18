@@ -63,11 +63,12 @@ if (!function_exists('dual_entry_is_staff_phone')) {
 if (!function_exists('dual_entry_clear_pick')) {
     function dual_entry_clear_pick()
     {
-        unset($_SESSION['helalia_role'], $_SESSION['helalia_role_pick_token']);
+        unset($_SESSION['helalia_role'], $_SESSION['helalia_role_pick_token'], $_SESSION['helalia_is_manual_dual']);
         if (!headers_sent()) {
             setcookie('helalia_dual_pick', '', time() - 3600, '/');
+            setcookie('helalia_dual_role', '', time() - 3600, '/');
         }
-        unset($_COOKIE['helalia_dual_pick']);
+        unset($_COOKIE['helalia_dual_pick'], $_COOKIE['helalia_dual_role']);
     }
 }
 
@@ -127,11 +128,12 @@ if (!function_exists('dual_entry_redirect_if_dual_staff')) {
             return false;
         }
         dual_entry_clear_pick();
-        unset($_SESSION['helalia_emp_backup']);
+        unset($_SESSION['helalia_emp_backup'], $_SESSION['helalia_is_manual_dual']);
         if (!headers_sent()) {
             setcookie('helalia_dual_staff', '1', time() + (86400 * 365), '/');
+            setcookie('helalia_dual_role', '', time() - 3600, '/');
         }
-        header('Location: emp/' . $langDir . '/choose-role.php');
+        header('Location: emp/' . $langDir . '/choose-role.php?fresh=1');
         exit;
     }
 }

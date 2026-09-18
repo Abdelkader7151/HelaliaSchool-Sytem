@@ -121,9 +121,11 @@ if (isset($_GET['exit'])) {
         $_SESSION['helalia_local_test'],
         $_SESSION['helalia_snapshot_emp'],
         $_SESSION['helalia_emp_backup'],
-        $_SESSION['helalia_role_pick_token']
+        $_SESSION['helalia_role_pick_token'],
+        $_SESSION['helalia_is_manual_dual']
     );
     setcookie('helalia_dual_pick', '', time() - 3600, '/');
+    setcookie('helalia_dual_role', '', time() - 3600, '/');
     setcookie('helalia_dual_staff', '', time() - 3600, '/');
     $up = $staffInKid ? '../' : '';
     $loginUp = $staffInKid ? '../../../' : '../../';
@@ -195,8 +197,8 @@ if ($staffPreview) {
     $photoUrl = staff_photo_url($row_get_user);
     $old = 'https://system.helalia-ls.org/app/old/' . $staffLang . '/';
     $css = '../assets/css/helalia.css';
-    $extraCss = '../assets/css/staff.css?v=73';
-    $js = '../assets/js/staff.js?v=19';
+    $extraCss = '../assets/css/staff.css?v=74';
+    $js = '../assets/js/staff.js?v=20';
     $icon = '../assets/img/logo-icon.png';
     $logo = '../assets/img/logo.png';
     $showStudent = $showHomework = $showRevision = $showMemo = true;
@@ -227,8 +229,8 @@ if ($staffPreview) {
                     $_SESSION['MM_Userid'] = (int) $asUser['id'];
                     $_SESSION['account_type'] = 2;
                     $_SESSION['helalia_local_test'] = 1;
-                    unset($_SESSION['helalia_role'], $_SESSION['helalia_dual_kids'], $_SESSION['helalia_dual_key']);
-                    header('Location: choose-role.php');
+                    unset($_SESSION['helalia_role'], $_SESSION['helalia_dual_kids'], $_SESSION['helalia_dual_key'], $_SESSION['helalia_is_manual_dual']);
+                    header('Location: choose-role.php?fresh=1');
                     exit;
                 }
             }
@@ -243,8 +245,8 @@ if ($staffPreview) {
                 $_SESSION['helalia_snapshot_emp'] = $person;
                 $_SESSION['helalia_dual_kids'] = local_real_pack_kids($person);
                 $_SESSION['helalia_dual_key'] = $person['emp_id'] . ':' . $person['id'];
-                unset($_SESSION['helalia_role']);
-                header('Location: choose-role.php');
+                unset($_SESSION['helalia_role'], $_SESSION['helalia_is_manual_dual']);
+                header('Location: choose-role.php?fresh=1');
                 exit;
             }
             header('Location: ' . $picker);
@@ -478,8 +480,8 @@ if ($staffPreview) {
 
     $old = 'https://system.helalia-ls.org/app/old/' . $staffLang . '/';
     $css = '../assets/css/helalia.css';
-    $extraCss = '../assets/css/staff.css?v=73';
-    $js = '../assets/js/staff.js?v=19';
+    $extraCss = '../assets/css/staff.css?v=74';
+    $js = '../assets/js/staff.js?v=20';
     $icon = '../assets/img/logo-icon.png';
     $logo = '../assets/img/logo.png';
     $parentCss = $mobileRoot . '/parent/assets/css/helalia.css';
@@ -1202,9 +1204,9 @@ function staff_head($title, $dir, $css, $icon)
     echo '<link rel="preconnect" href="https://fonts.googleapis.com">';
     echo '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>';
     if ($dir === 'rtl') {
-        echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap">';
+        echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=optional">';
     } else {
-        echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">';
+        echo '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=optional">';
     }
     echo '<link rel="stylesheet" href="' . staff_h($css) . '">';
     if (!empty($extraCss)) {
@@ -1357,7 +1359,7 @@ function staff_drawer($active)
     echo '<a class="drawer__link' . ($active === 'home' ? ' is-active' : '') . '" href="' . staff_h($homeHref) . '">' . staff_ico('home') . '<span>' . staff_h($L['nav_home']) . '</span></a>';
     echo '<a class="drawer__link' . ($active === 'choices' ? ' is-active' : '') . '" href="' . staff_h(staff_nav_path('choices.php')) . '">' . staff_ico('grid') . '<span>' . staff_h($L['nav_choices']) . '</span></a>';
     if (function_exists('dual_has_dual') && dual_has_dual()) {
-        echo '<a class="drawer__link' . ($active === 'role' ? ' is-active' : '') . '" href="' . staff_h(staff_nav_path('choose-role.php')) . '">' . staff_ico('swap') . '<span>' . staff_h($L['role_switch']) . '</span></a>';
+        echo '<a class="drawer__link' . ($active === 'role' ? ' is-active' : '') . '" href="' . staff_h(staff_nav_path('choose-role.php?fresh=1')) . '">' . staff_ico('swap') . '<span>' . staff_h($L['role_switch']) . '</span></a>';
     }
     echo '<a class="drawer__link' . ($active === 'checkin' ? ' is-active' : '') . '" href="' . staff_h(staff_nav_path('emp-checkin.php')) . '">' . staff_ico('map-pin') . '<span>' . staff_h($L['checkin']) . '</span></a>';
     echo '<a class="drawer__link' . ($active === 'profile' ? ' is-active' : '') . '" href="' . staff_h(staff_profile_href()) . '">' . staff_ico('laptop') . '<span>' . staff_h($L['profile']) . '</span></a>';

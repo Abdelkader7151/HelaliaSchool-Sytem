@@ -471,39 +471,112 @@ function dual_parent_can_switch_role()
     return false;
 }
 
+/**
+ * dual_mark_role_pick
+ * Long-lived pick cookie (zay helalia_dual_staff) — mesh session-only
+ * 3ashan WebView ma yirga3sh lel chooser mid-session
+ */
 function dual_mark_role_pick()
 {
     if (empty($_SESSION['helalia_role_pick_token'])) {
         $_SESSION['helalia_role_pick_token'] = bin2hex(function_exists('random_bytes') ? random_bytes(8) : openssl_random_pseudo_bytes(8));
     }
     $token = (string) $_SESSION['helalia_role_pick_token'];
+    $role = isset($_SESSION['helalia_role']) ? (string) $_SESSION['helalia_role'] : 'emp';
+    if ($role !== 'parent') {
+        $role = 'emp';
+    }
+    $expire = time() + (86400 * 365);
     if (!headers_sent()) {
-        setcookie('helalia_dual_pick', $token, 0, '/'); // session cookie
-        setcookie('helalia_dual_staff', '1', time() + (86400 * 365), '/');
+        setcookie('helalia_dual_pick', $token, $expire, '/');
+        setcookie('helalia_dual_role', $role, $expire, '/');
+        setcookie('helalia_dual_staff', '1', $expire, '/');
     }
     $_COOKIE['helalia_dual_pick'] = $token;
+    $_COOKIE['helalia_dual_role'] = $role;
     $_COOKIE['helalia_dual_staff'] = '1';
 }
 
 function dual_clear_role_pick()
 {
-    unset($_SESSION['helalia_role'], $_SESSION['helalia_role_pick_token']);
+    unset($_SESSION['helalia_role'], $_SESSION['helalia_role_pick_token'], $_SESSION['helalia_is_manual_dual']);
     if (!headers_sent()) {
         setcookie('helalia_dual_pick', '', time() - 3600, '/');
+        setcookie('helalia_dual_role', '', time() - 3600, '/');
     }
-    unset($_COOKIE['helalia_dual_pick']);
+    unset($_COOKIE['helalia_dual_pick'], $_COOKIE['helalia_dual_role']);
 }
 
+/**
+ * dual_role_pick_active
+ * Rehydrate session token/role from cookies law WebView mishy el PHP session
+ */
 function dual_role_pick_active()
 {
-    $t = isset($_SESSION['helalia_role_pick_token']) ? (string) $_SESSION['helalia_role_pick_token'] : '';
     $c = isset($_COOKIE['helalia_dual_pick']) ? (string) $_COOKIE['helalia_dual_pick'] : '';
-    return ($t !== '' && $c !== '' && hash_equals($t, $c));
+    if ($c === '') {
+        return false;
+    }
+    $t = isset($_SESSION['helalia_role_pick_token']) ? (string) $_SESSION['helalia_role_pick_token'] : '';
+    if ($t === '') {
+        $_SESSION['helalia_role_pick_token'] = $c;
+        $t = $c;
+    }
+    if (!hash_equals($t, $c)) {
+        return false;
+    }
+    if (empty($_SESSION['helalia_role'])) {
+        $r = isset($_COOKIE['helalia_dual_role']) ? (string) $_COOKIE['helalia_dual_role'] : '';
+        if ($r === 'parent' || $r === 'emp') {
+            $_SESSION['helalia_role'] = $r;
+        }
+    }
+    return true;
+}
+
+/**
+ * dual_choose_role_prepare
+ * Clear pick bas 3ala fresh/exit (Switch role / app reopen).
+ * Law GET 3adi w pick lessa active → rg3 lel UI (mesh wipe).
+ */
+function dual_choose_role_prepare()
+{
+    if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        return;
+    }
+    $fresh = isset($_GET['fresh']) || isset($_GET['exit']);
+    if ($fresh) {
+        dual_clear_role_pick();
+        dual_restore_emp_session_for_staff_boot();
+        return;
+    }
+    if (dual_role_pick_active()) {
+        $role = isset($_SESSION['helalia_role']) ? (string) $_SESSION['helalia_role'] : '';
+        if ($role === 'parent') {
+            dual_open_live_parent();
+        }
+        if ($role === 'emp') {
+            header('Location: ' . dual_gate_href('emp-view.php'));
+            exit;
+        }
+    }
+    dual_restore_emp_session_for_staff_boot();
 }
 
 function dual_is_manual_dual()
 {
     global $row_get_user, $empId, $database;
+
+    // Cache per request + session — skip heavy backup rebuild mid-session
+    if (isset($_SESSION['helalia_is_manual_dual']) && is_bool($_SESSION['helalia_is_manual_dual'])) {
+        if ($_SESSION['helalia_is_manual_dual'] === true
+            && empty($_SESSION['helalia_emp_backup'])
+            && isset($_SESSION['helalia_role'])
+            && $_SESSION['helalia_role'] === 'parent') {
+            dual_ensure_emp_backup_from_helu();
+        }
+        return $_SESSION['helalia_is_manual_dual'];
+    }
 
     dual_ensure_emp_backup_from_helu();
 
@@ -512,14 +585,17 @@ function dual_is_manual_dual()
     $hasEmpBackup = (!empty($_SESSION['helalia_emp_backup']) && is_array($_SESSION['helalia_emp_backup']));
     $accountType = isset($_SESSION['account_type']) ? (int) $_SESSION['account_type'] : 0;
     if (!$hasEmpBackup && $accountType !== 2) {
+        $_SESSION['helalia_is_manual_dual'] = false;
         return false;
     }
     if (!$hasEmpBackup && isset($row_get_user['account_type']) && (int) $row_get_user['account_type'] !== 2) {
+        $_SESSION['helalia_is_manual_dual'] = false;
         return false;
     }
 
     $map = dual_manual_phones();
     if (!$map) {
+        $_SESSION['helalia_is_manual_dual'] = false;
         return false;
     }
     $candidates = array();
@@ -549,9 +625,11 @@ function dual_is_manual_dual()
     foreach ($candidates as $raw) {
         $n = dual_digits($raw);
         if ($n !== '' && isset($map[$n])) {
+            $_SESSION['helalia_is_manual_dual'] = true;
             return true;
         }
     }
+    $_SESSION['helalia_is_manual_dual'] = false;
     return false;
 }
 
@@ -950,7 +1028,7 @@ function dual_gate()
         return;
     }
 
-    // Chooser itself: let the page clear the previous pick and show Emp/Parent.
+    // Chooser itself: prepare() decides clear vs bounce-back; do not gate here.
     if ($script === 'choose-role.php') {
         if ($manual && !headers_sent()) {
             setcookie('helalia_dual_staff', '1', time() + (86400 * 365), '/');
@@ -961,13 +1039,13 @@ function dual_gate()
     if (!dual_role_pick_active()) {
         dual_clear_role_pick();
         dual_restore_emp_session_for_staff_boot();
-        header('Location: ' . dual_gate_href('choose-role.php'));
+        header('Location: ' . dual_gate_href('choose-role.php') . '?fresh=1');
         exit;
     }
 
     $role = isset($_SESSION['helalia_role']) ? (string) $_SESSION['helalia_role'] : '';
     if ($role === '') {
-        header('Location: ' . dual_gate_href('choose-role.php'));
+        header('Location: ' . dual_gate_href('choose-role.php') . '?fresh=1');
         exit;
     }
     if ($role === 'parent') {

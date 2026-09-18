@@ -6,16 +6,9 @@ if (empty($dualKids) && !(function_exists('dual_is_manual_dual') && dual_is_manu
     header('Location: emp-view.php');
     exit;
 }
-// Always re-open chooser cleanly (app reopen / Switch role).
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    if (function_exists('dual_clear_role_pick')) {
-        dual_clear_role_pick();
-    } else {
-        unset($_SESSION['helalia_role']);
-    }
-    if (function_exists('dual_restore_emp_session_for_staff_boot')) {
-        dual_restore_emp_session_for_staff_boot();
-    }
+// Clear pick only on ?fresh=1 / exit — accidental GET keeps mid-session role
+if (function_exists('dual_choose_role_prepare')) {
+    dual_choose_role_prepare();
 }
 dual_role_handle_post();
 dual_render_choose();

@@ -316,6 +316,15 @@
     window.addEventListener('load', cleanSuccessParams);
   }
 
+  // Never leave Working stuck after back/bfcache / tab focus
+  function dismissWorking() {
+    if (window.staffShowWorking) window.staffShowWorking(false);
+  }
+  window.addEventListener('pageshow', dismissWorking);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') dismissWorking();
+  });
+
   function bindWaitForm(form) {
     if (!form || form.getAttribute('data-staff-wait-bound') === '1') return;
     form.setAttribute('data-staff-wait-bound', '1');
@@ -373,23 +382,15 @@
   });
 })();
 
-/* Dual-role: after app kill/reopen, always show Emp/Parent chooser again. */
+/*
+ * Dual Emp/Parent reopen is handled on splash (index → choose-role?fresh=1).
+ * Do NOT force chooser from JS mid-session — that bounced Profile → dual role.
+ */
 (function () {
-  var dual = document.body && document.body.getAttribute('data-helalia-dual');
-  if (dual !== '1') return;
-  var path = location.pathname || '';
-  var isChoose = path.indexOf('choose-role') !== -1;
-  if (isChoose) {
-    try { sessionStorage.removeItem('helalia_dual_pick'); } catch (e) {}
-    return;
-  }
-  if ((location.search || '').indexOf('dual_picked=1') !== -1) {
-    try { sessionStorage.setItem('helalia_dual_pick', '1'); } catch (e) {}
-    return;
-  }
-  var picked = false;
-  try { picked = sessionStorage.getItem('helalia_dual_pick') === '1'; } catch (e) { return; }
-  if (picked) return;
-  var base = path.replace(/\/[^\/]*$/, '/');
-  location.replace(base + 'choose-role.php?fresh=1');
+  if ((location.search || '').indexOf('dual_picked=1') === -1) return;
+  try {
+    if (window.history && history.replaceState) {
+      history.replaceState(null, '', location.pathname + (location.hash || ''));
+    }
+  } catch (e) {}
 })();

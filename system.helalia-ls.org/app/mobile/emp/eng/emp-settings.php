@@ -9,7 +9,7 @@ staff_hero($L['settings'], false, $meta, false);
   <div class="settings">
     <a class="settings__item" href="<?php echo staff_h(staff_home_href()); ?>"><span><?php echo staff_h(dual_is_parent_mode() ? $L['parent_home'] : $L['home_title']); ?></span><span class="settings__go">›</span></a>
     <?php if (dual_has_dual()) { ?>
-    <a class="settings__item" href="choose-role.php"><span><?php echo staff_h($L['role_switch']); ?></span><span class="settings__go">›</span></a>
+    <a class="settings__item" href="choose-role.php?fresh=1"><span><?php echo staff_h($L['role_switch']); ?></span><span class="settings__go">›</span></a>
     <?php } ?>
     <a class="settings__item" href="profile.php"><span><?php echo staff_h($L['profile']); ?></span><span class="settings__go">›</span></a>
     <a class="settings__item" href="my-absence.php"><span><?php echo staff_h($L['my_absence']); ?></span><span class="settings__go">›</span></a>

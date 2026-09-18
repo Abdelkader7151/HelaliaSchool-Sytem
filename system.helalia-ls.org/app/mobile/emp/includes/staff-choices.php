@@ -5,7 +5,7 @@ function staff_role_switch_tile()
     if (!function_exists('dual_has_dual') || !dual_has_dual()) {
         return null;
     }
-    return array('swap', 'role_switch', staff_nav_path('choose-role.php'), 't-gold');
+    return array('swap', 'role_switch', staff_nav_path('choose-role.php?fresh=1'), 't-gold');
 }
 
 function staff_render_choices()

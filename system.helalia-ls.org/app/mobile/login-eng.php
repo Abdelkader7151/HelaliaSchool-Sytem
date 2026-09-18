@@ -65,7 +65,7 @@ if (isset($_POST['phone'])) {
             if (!headers_sent()) {
                 setcookie('helalia_dual_staff', '1', time() + (86400 * 365), '/');
             }
-            $dest = 'emp/' . $langDir . '/choose-role.php';
+            $dest = 'emp/' . $langDir . '/choose-role.php?fresh=1';
         }
         helalia_persist_and_redirect($loginUsername, $password, $dest);
 
